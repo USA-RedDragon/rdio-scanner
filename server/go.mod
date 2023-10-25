@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/dhowden/tag v0.0.0-20220618230019-adf36e896086
 	github.com/fsnotify/fsnotify v1.5.4
-	github.com/go-sql-driver/mysql v1.6.0
+	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.5.0
