@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/dhowden/tag v0.0.0-20230630033851-978a0926ee25
 	github.com/fsnotify/fsnotify v1.7.0
-	github.com/go-sql-driver/mysql v1.6.0
+	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/google/uuid v1.3.1
 	github.com/gorilla/websocket v1.5.0
