@@ -1,6 +1,6 @@
 module rdio-scanner/server
 
-go 1.21.3
+go 1.21.4
 
 require (
 	github.com/dhowden/tag v0.0.0-20230630033851-978a0926ee25
