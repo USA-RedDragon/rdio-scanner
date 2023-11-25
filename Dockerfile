@@ -14,6 +14,9 @@ FROM golang:1.21.4 as binary
 
 WORKDIR /app
 
+COPY server/go.mod server/go.sum /app/server/
+RUN cd server && go mod download
+
 COPY server/. server/.
 COPY --from=frontend /app/dist/ server/webapp/
 
