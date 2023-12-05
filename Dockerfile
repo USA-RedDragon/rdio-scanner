@@ -10,7 +10,7 @@ COPY client/. ./
 
 RUN npm run build
 
-FROM golang:1.21.4 as binary
+FROM golang:1.21.5 as binary
 
 WORKDIR /app
 
