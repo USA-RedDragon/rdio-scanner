@@ -22,7 +22,7 @@ COPY --from=frontend /app/dist/ server/webapp/
 
 RUN cd server && CGO_ENABLED=0 go build -o /rdio-scanner
 
-FROM alpine:3.18.5
+FROM alpine:3.19.0
 
 WORKDIR /app
 
