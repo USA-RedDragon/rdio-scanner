@@ -18,8 +18,8 @@
     "tslib": "^2.6.2"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^17.0.6",
-    "@angular/cli": "^17.0.6",
+    "@angular-devkit/build-angular": "^17.0.7",
+    "@angular/cli": "^17.0.7",
     "@angular/compiler-cli": "^17.0.6",
     "@types/node": "^20.10.4",
     "@typescript-eslint/eslint-plugin": "^6.14.0",
