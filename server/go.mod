@@ -3,7 +3,7 @@ module rdio-scanner/server
 go 1.21.6
 
 require (
-	github.com/dhowden/tag v0.0.0-20230630033851-978a0926ee25
+	github.com/dhowden/tag v0.0.0-20240122213351-0253fc576d1c
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang-jwt/jwt/v5 v5.2.0
