@@ -9,6 +9,8 @@ github.com/dhowden/tag v0.0.0-20230630033851-978a0926ee25 h1:simG0vMYFvNriGhaaat
 github.com/dhowden/tag v0.0.0-20230630033851-978a0926ee25/go.mod h1:Z3Lomva4pyMWYezjMAU5QWRh0p1VvO4199OHlFnyKkM=
 github.com/dhowden/tag v0.0.0-20240122213351-0253fc576d1c h1:/a9GZBmUB2rc6XYraUxL02pg5G59zn5Cckt8Syc7UFQ=
 github.com/dhowden/tag v0.0.0-20240122213351-0253fc576d1c/go.mod h1:Z3Lomva4pyMWYezjMAU5QWRh0p1VvO4199OHlFnyKkM=
+github.com/dhowden/tag v0.0.0-20240122214204-713ab0e94639 h1:U3nSi6C8fCzav9CPYMC4SMSRW8HivuqENikr2aFT+yI=
+github.com/dhowden/tag v0.0.0-20240122214204-713ab0e94639/go.mod h1:Z3Lomva4pyMWYezjMAU5QWRh0p1VvO4199OHlFnyKkM=
 github.com/dustin/go-humanize v1.0.1 h1:GzkhY7T5VNhEkwH0PVJgjz+fX1rhBrR7pRT3mDkpeCY=
 github.com/dustin/go-humanize v1.0.1/go.mod h1:Mu1zIs6XwVuF/gI1OepvI0qD18qycQx+mFykh5fBlto=
 github.com/fsnotify/fsnotify v1.7.0 h1:8JEhPFa5W2WU7YfeZzPNqzMP6Lwt7L2715Ggo0nosvA=
