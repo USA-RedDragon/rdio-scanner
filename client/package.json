@@ -21,7 +21,7 @@
     "@angular-devkit/build-angular": "^17.1.1",
     "@angular/cli": "^17.1.1",
     "@angular/compiler-cli": "^17.1.1",
-    "@types/node": "^20.11.11",
+    "@types/node": "^20.11.12",
     "@typescript-eslint/eslint-plugin": "^6.20.0",
     "@typescript-eslint/parser": "^6.20.0",
     "ajv-keywords": "^5.1.0",
