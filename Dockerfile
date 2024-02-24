@@ -1,4 +1,4 @@
-FROM node:21.6.1 as frontend
+FROM node:21.6.2 as frontend
 
 WORKDIR /app
 
