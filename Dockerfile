@@ -14,7 +14,8 @@ ARG TZDATA_VERSION=2024a-r0
 RUN apk add --no-cache \
     ca-certificates="${CA_CERTIFICATES_VERSION}" \
     ffmpeg="${FFMPEG_VERSION}" \
-    tzdata="${TZDATA_VERSION}"
+    tzdata="${TZDATA_VERSION}" \
+    mailcap
 
 COPY rdio-scanner ./
 
