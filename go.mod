@@ -1,6 +1,6 @@
 module github.com/USA-RedDragon/rdio-scanner
 
-go 1.23.0
+go 1.23.1
 
 require (
 	github.com/dhowden/tag v0.0.0-20240122214204-713ab0e94639
