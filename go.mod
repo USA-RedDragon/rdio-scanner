@@ -4,7 +4,7 @@ go 1.23.2
 
 require (
 	github.com/dhowden/tag v0.0.0-20240122214204-713ab0e94639
-	github.com/fsnotify/fsnotify v1.7.0
+	github.com/fsnotify/fsnotify v1.8.0
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/google/uuid v1.6.0
