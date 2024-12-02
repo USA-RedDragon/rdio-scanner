@@ -14,7 +14,7 @@ require (
 	github.com/prometheus/client_golang v1.20.5
 	golang.org/x/crypto v0.29.0
 	gopkg.in/ini.v1 v1.67.0
-	modernc.org/sqlite v1.34.1
+	modernc.org/sqlite v1.34.2
 )
 
 require (
