@@ -291,9 +291,6 @@ func (tags *Tags) Write(db *Database) error {
 					break
 				}
 			}
-			if _, err = db.Sql.Exec(q, tag.Id, tag.Label); err != nil {
-				break
-			}
 		} else {
 			q = "update `rdioScannerTags` set `_id` = ?, `label` = ? where `_id` = ?"
 			if db.Config.DbType == DbTypePostgresql {
