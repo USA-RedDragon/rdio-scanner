@@ -502,12 +502,16 @@ func (systems *Systems) Write(db *Database) error {
 		}
 
 		if count == 0 {
-			q = "insert into `rdioScannerSystems` (`_id`, `autoPopulate`, `blacklists`, `id`, `label`, `led`, `order`) values (?, ?, ?, ?, ?, ?, ?)"
 			if db.Config.DbType == DbTypePostgresql {
-				q = "insert into rdioScannerSystems (_id, autoPopulate, blacklists, id, label, led, \"order\") values ($1, $2, $3, $4, $5, $6, $7)"
-			}
-			if _, err = db.Sql.Exec(q, system.RowId, system.AutoPopulate, blacklists, system.Id, system.Label, system.Led, system.Order); err != nil {
-				break
+				q = "insert into rdioScannerSystems (autoPopulate, blacklists, id, label, led, \"order\") values ($1, $2, $3, $4, $5, $6)"
+				if _, err = db.Sql.Exec(q, system.AutoPopulate, blacklists, system.Id, system.Label, system.Led, system.Order); err != nil {
+					break
+				}
+			} else {
+				q = "insert into `rdioScannerSystems` (`_id`, `autoPopulate`, `blacklists`, `id`, `label`, `led`, `order`) values (?, ?, ?, ?, ?, ?, ?)"
+				if _, err = db.Sql.Exec(q, system.RowId, system.AutoPopulate, blacklists, system.Id, system.Label, system.Led, system.Order); err != nil {
+					break
+				}
 			}
 
 		} else {

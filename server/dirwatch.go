@@ -948,14 +948,17 @@ func (dirwatches *Dirwatches) Write(db *Database) error {
 		}
 
 		if count == 0 {
-			q := "insert into `rdioScannerDirWatches` (`_id`, `delay`, `deleteAfter`, `directory`, `disabled`, `extension`, `frequency`, `mask`, `order`, `systemId`, `talkgroupId`, `type`, `usePolling`) values (?, ?, ?, ?, ?, ?, ?, ?, ? ,? ,? ,? ,?)"
 			if db.Config.DbType == DbTypePostgresql {
-				q = "insert into rdioScannerDirWatches (_id, delay, deleteAfter, directory, disabled, extension, frequency, mask, \"order\", systemId, talkgroupId, type, usePolling) values ($1, $2, $3, $4, $5, $6, $7, $8, $9 , $10, $11, $12, $13)"
+				q = "insert into rdioScannerDirWatches (delay, deleteAfter, directory, disabled, extension, frequency, mask, \"order\", systemId, talkgroupId, type, usePolling) values ($1, $2, $3, $4, $5, $6, $7, $8, $9 , $10, $11, $12)"
+				if _, err = db.Sql.Exec(q, dirwatch.Delay, dirwatch.DeleteAfter, dirwatch.Directory, dirwatch.Disabled, dirwatch.Extension, dirwatch.Frequency, dirwatch.Mask, dirwatch.Order, dirwatch.SystemId, dirwatch.TalkgroupId, dirwatch.Kind, dirwatch.UsePolling); err != nil {
+					break
+				}
+			} else {
+				q = "insert into `rdioScannerDirWatches` (`_id`, `delay`, `deleteAfter`, `directory`, `disabled`, `extension`, `frequency`, `mask`, `order`, `systemId`, `talkgroupId`, `type`, `usePolling`) values (?, ?, ?, ?, ?, ?, ?, ?, ? ,? ,? ,? ,?)"
+				if _, err = db.Sql.Exec(q, dirwatch.Id, dirwatch.Delay, dirwatch.DeleteAfter, dirwatch.Directory, dirwatch.Disabled, dirwatch.Extension, dirwatch.Frequency, dirwatch.Mask, dirwatch.Order, dirwatch.SystemId, dirwatch.TalkgroupId, dirwatch.Kind, dirwatch.UsePolling); err != nil {
+					break
+				}
 			}
-			if _, err = db.Sql.Exec(q, dirwatch.Id, dirwatch.Delay, dirwatch.DeleteAfter, dirwatch.Directory, dirwatch.Disabled, dirwatch.Extension, dirwatch.Frequency, dirwatch.Mask, dirwatch.Order, dirwatch.SystemId, dirwatch.TalkgroupId, dirwatch.Kind, dirwatch.UsePolling); err != nil {
-				break
-			}
-
 		} else {
 			q := "update `rdioScannerDirWatches` set `_id` = ?, `delay` = ?, `deleteAfter` = ?, `directory` = ?, `disabled` = ?, `extension` = ?, `frequency` = ?, `mask` = ?, `order` = ?, `systemId` = ?, `talkgroupId` = ?, `type` = ?, `usePolling` = ? where `_id` = ?"
 			if db.Config.DbType == DbTypePostgresql {

@@ -541,12 +541,16 @@ func (downstreams *Downstreams) Write(db *Database) error {
 		}
 
 		if count == 0 {
-			q := "insert into `rdioScannerDownstreams` (`_id`, `apiKey`, `disabled`, `order`, `systems`, `url`) values (?, ?, ?, ?, ?, ?)"
 			if db.Config.DbType == DbTypePostgresql {
-				q = "insert into rdioScannerDownstreams (_id, apiKey, disabled, \"order\", systems, url) values ($1, $2, $3, $4, $5, $6)"
-			}
-			if _, err = db.Sql.Exec(q, downstream.Id, downstream.Apikey, downstream.Disabled, downstream.Order, systems, downstream.Url); err != nil {
-				break
+				q = "insert into rdioScannerDownstreams (apiKey, disabled, \"order\", systems, url) values ($1, $2, $3, $4, $5)"
+				if _, err = db.Sql.Exec(q, downstream.Apikey, downstream.Disabled, downstream.Order, systems, downstream.Url); err != nil {
+					break
+				}
+			} else {
+				q = "insert into `rdioScannerDownstreams` (`_id`, `apiKey`, `disabled`, `order`, `systems`, `url`) values (?, ?, ?, ?, ?, ?)"
+				if _, err = db.Sql.Exec(q, downstream.Id, downstream.Apikey, downstream.Disabled, downstream.Order, systems, downstream.Url); err != nil {
+					break
+				}
 			}
 
 		} else {

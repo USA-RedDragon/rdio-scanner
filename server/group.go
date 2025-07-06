@@ -284,12 +284,16 @@ func (groups *Groups) Write(db *Database) error {
 		}
 
 		if count == 0 {
-			q := "insert into `rdioScannerGroups` (`_id`, `label`) values (?, ?)"
 			if db.Config.DbType == DbTypePostgresql {
-				q = "insert into rdioScannerGroups (_id, label) values ($1, $2)"
-			}
-			if _, err = db.Sql.Exec(q, group.Id, group.Label); err != nil {
-				break
+				q = "insert into rdioScannerGroups (label) values ($1)"
+				if _, err = db.Sql.Exec(q, group.Label); err != nil {
+					break
+				}
+			} else {
+				q := "insert into `rdioScannerGroups` (`_id`, `label`) values (?, ?)"
+				if _, err = db.Sql.Exec(q, group.Id, group.Label); err != nil {
+					break
+				}
 			}
 
 		} else {

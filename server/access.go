@@ -375,12 +375,16 @@ func (accesses *Accesses) Write(db *Database) error {
 		}
 
 		if count == 0 {
-			q := "insert into `rdioScannerAccesses` (`_id`, `code`, `expiration`, `ident`, `limit`, `order`, `systems`) values (?, ?, ?, ?, ?, ?, ?)"
 			if db.Config.DbType == DbTypePostgresql {
-				q = "insert into rdioScannerAccesses (_id, code, expiration, ident, \"limit\", \"order\", systems) values ($1, $2, $3, $4, $5, $6, $7)"
-			}
-			if _, err = db.Sql.Exec(q, access.Id, access.Code, access.Expiration, access.Ident, access.Limit, access.Order, systems); err != nil {
-				break
+				q = "insert into rdioScannerAccesses (code, expiration, ident, \"limit\", \"order\", systems) values ($1, $2, $3, $4, $5, $6)"
+				if _, err = db.Sql.Exec(q, access.Code, access.Expiration, access.Ident, access.Limit, access.Order, systems); err != nil {
+					break
+				}
+			} else {
+				q = "insert into `rdioScannerAccesses` (`_id`, `code`, `expiration`, `ident`, `limit`, `order`, `systems`) values (?, ?, ?, ?, ?, ?, ?)"
+				if _, err = db.Sql.Exec(q, access.Id, access.Code, access.Expiration, access.Ident, access.Limit, access.Order, systems); err != nil {
+					break
+				}
 			}
 		} else {
 			q := "update `rdioScannerAccesses` set `_id` = ?, `code` = ?, `expiration` = ?, `ident` = ?, `limit` = ?, `order` = ?, `systems` = ? where `_id` = ?"

@@ -280,9 +280,16 @@ func (tags *Tags) Write(db *Database) error {
 		}
 
 		if count == 0 {
-			q = "insert into `rdioScannerTags` (`_id`, `label`) values (?, ?)"
 			if db.Config.DbType == DbTypePostgresql {
-				q = "insert into rdioScannerTags (_id, label) values ($1, $2)"
+				q = "insert into rdioScannerTags (label) values ($1)"
+				if _, err = db.Sql.Exec(q, tag.Label); err != nil {
+					break
+				}
+			} else {
+				q = "insert into `rdioScannerTags` (`_id`, `label`) values (?, ?)"
+				if _, err = db.Sql.Exec(q, tag.Id, tag.Label); err != nil {
+					break
+				}
 			}
 			if _, err = db.Sql.Exec(q, tag.Id, tag.Label); err != nil {
 				break

@@ -296,12 +296,16 @@ func (apikeys *Apikeys) Write(db *Database) error {
 		}
 
 		if count == 0 {
-			q := "insert into `rdioScannerApiKeys` (`_id`, `disabled`, `ident`, `key`, `order`, `systems`) values (?, ?, ?, ?, ?, ?)"
 			if db.Config.DbType == DbTypePostgresql {
-				q = "insert into rdioScannerApiKeys (_id, disabled, ident, key, \"order\", systems) values ($1, $2, $3, $4, $5, $6)"
-			}
-			if _, err = db.Sql.Exec(q, apikey.Id, apikey.Disabled, apikey.Ident, apikey.Key, apikey.Order, systems); err != nil {
-				break
+				q = "insert into rdioScannerApiKeys (disabled, ident, key, \"order\", systems) values ($1, $2, $3, $4, $5)"
+				if _, err = db.Sql.Exec(q, apikey.Disabled, apikey.Ident, apikey.Key, apikey.Order, systems); err != nil {
+					break
+				}
+			} else {
+				q = "insert into `rdioScannerApiKeys` (`_id`, `disabled`, `ident`, `key`, `order`, `systems`) values (?, ?, ?, ?, ?, ?)"
+				if _, err = db.Sql.Exec(q, apikey.Id, apikey.Disabled, apikey.Ident, apikey.Key, apikey.Order, systems); err != nil {
+					break
+				}
 			}
 		} else {
 			q := "update `rdioScannerApiKeys` set `_id` = ?, `disabled` = ?, `ident` = ?, `key` = ?, `order` = ?, `systems` = ? where `_id` = ?"
