@@ -12,7 +12,7 @@
     "@angular/platform-browser-dynamic": "^18.2.13",
     "@angular/router": "^18.2.13",
     "@angular/service-worker": "^18.2.13",
-    "@bjorn3/browser_wasi_shim": "^0.4.0",
+    "@bjorn3/browser_wasi_shim": "^0.4.2",
     "ngx-colors": "^3.6.0",
     "rxjs": "~7.8.1",
     "tslib": "^2.8.1"
