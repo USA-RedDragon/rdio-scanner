@@ -13,7 +13,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/prometheus/client_golang v1.20.5
 	golang.org/x/crypto v0.33.0
-	gopkg.in/ini.v1 v1.67.0
+	gopkg.in/ini.v1 v1.67.3
 	modernc.org/sqlite v1.34.5
 )
 
