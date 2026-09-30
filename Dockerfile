@@ -5,11 +5,11 @@ WORKDIR /app
 ENV DOCKER=1
 
 # renovate: datasource=repology depName=alpine_3_21/ca-certificates
-ARG CA_CERTIFICATES_VERSION=20241121-r1
+ARG CA_CERTIFICATES_VERSION=20260909-r0
 # renovate: datasource=repology depName=alpine_3_21/ffmpeg
 ARG FFMPEG_VERSION=6.1.2-r1
 # renovate: datasource=repology depName=alpine_3_21/tzdata
-ARG TZDATA_VERSION=2025b-r0
+ARG TZDATA_VERSION=2026d-r0
 
 RUN apk add --no-cache \
     ca-certificates="${CA_CERTIFICATES_VERSION}" \
