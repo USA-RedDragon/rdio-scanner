@@ -1,0 +1,30 @@
+name: Tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: '${{ github.workflow }} @ ${{ github.ref }}'
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: go test (sqlite, postgres, mysql, mariadb)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go generate ./...
+      # The database tests start PostgreSQL, MySQL and MariaDB with
+      # testcontainers; the runner's Docker daemon provides them.
+      - run: go test -count=1 -race -timeout 20m ./...
