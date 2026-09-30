@@ -132,11 +132,14 @@ func (calls *Calls) CheckDuplicate(call *Call, msTimeFrame uint, db *Database) b
 	from := call.DateTime.Add(-d)
 	to := call.DateTime.Add(d)
 
-	query := fmt.Sprintf("select count(*) from `rdioScannerCalls` where (`dateTime` between '%v' and '%v') and `system` = %v and `talkgroup` = %v", from, to, call.System, call.Talkgroup)
+	// Bind the times like the insert does: formatting a time.Time with %v gives
+	// "2006-01-02 15:04:05.999 +0000 UTC", which PostgreSQL rejects, so every
+	// check failed and duplicate detection was silently off.
+	query := "select count(*) from `rdioScannerCalls` where (`dateTime` between ? and ?) and `system` = ? and `talkgroup` = ?"
 	if db.Config.DbType == DbTypePostgresql {
-		query = fmt.Sprintf("select count(*) from rdioScannerCalls where (dateTime between '%v' and '%v') and system = %v and talkgroup = %v", from, to, call.System, call.Talkgroup)
+		query = "select count(*) from rdioScannerCalls where (dateTime between $1 and $2) and system = $3 and talkgroup = $4"
 	}
-	if err := db.Sql.QueryRow(query).Scan(&count); err != nil {
+	if err := db.Sql.QueryRow(query, from, to, call.System, call.Talkgroup).Scan(&count); err != nil {
 		return false
 	}
 
