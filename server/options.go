@@ -16,7 +16,9 @@
 package main
 
 import (
+	"crypto/rand"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"sync"
@@ -370,6 +372,37 @@ func (options *Options) Read(db *Database) error {
 	if err == nil {
 		if err = json.Unmarshal([]byte(s), &s); err == nil {
 			options.secret = s
+		}
+	}
+
+	// Older versions never persisted the JWT signing secret, so it stayed
+	// empty and admin tokens could be forged (HS256 with an empty key).
+	// Generate one and store it once.
+	if options.secret == "" {
+		buf := make([]byte, 32)
+		if _, err = rand.Read(buf); err != nil {
+			return fmt.Errorf("options.read: %v", err)
+		}
+		options.secret = hex.EncodeToString(buf)
+
+		if b, err := json.Marshal(options.secret); err == nil {
+			// Update first (a row may exist with an empty value), then insert
+			// if there was none, so the unique key constraint isn't hit.
+			uq := "update `rdioScannerConfigs` set `val` = ? where `key` = 'secret'"
+			iq := "insert into `rdioScannerConfigs` (`key`, `val`) values (?, ?)"
+			if db.Config.DbType == DbTypePostgresql {
+				uq = "update rdioScannerConfigs set val = $1 where key = 'secret'"
+				iq = "insert into rdioScannerConfigs (key, val) values ($1, $2)"
+			}
+			res, uerr := db.Sql.Exec(uq, string(b))
+			if uerr != nil {
+				return fmt.Errorf("options.read: persisting secret: %v", uerr)
+			}
+			if n, _ := res.RowsAffected(); n == 0 {
+				if _, err = db.Sql.Exec(iq, "secret", string(b)); err != nil {
+					return fmt.Errorf("options.read: persisting secret: %v", err)
+				}
+			}
 		}
 	}
 
