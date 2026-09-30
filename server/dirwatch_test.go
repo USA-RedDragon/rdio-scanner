@@ -162,7 +162,6 @@ func TestDirwatchesReadWrite(t *testing.T) {
 // A zero delay must read back like the other optional numeric fields (nil),
 // not as uint(0): Read checks the wrong variable (id instead of delay).
 func TestDirwatchesZeroDelay(t *testing.T) {
-	t.Skip("known bug: dirwatch Read tests id.Float64 instead of delay.Float64, so delay 0 reads back as uint(0); fixed during ent migration")
 
 	forEachDatabase(t, func(t *testing.T, db *Database) {
 		d := NewDirwatch()
@@ -184,7 +183,6 @@ func TestDirwatchesZeroDelay(t *testing.T) {
 func TestDirwatchesRemove(t *testing.T) {
 	forEachDatabase(t, func(t *testing.T, db *Database) {
 		if db.Config.DbType == DbTypeMysql || db.Config.DbType == DbTypeMariadb {
-			t.Skip("known bug: dirwatch delete uses table rdioScannerDirwatches (wrong case) and fails on mysql/mariadb; fixed during ent migration")
 		}
 
 		dirwatches := writeTwoDirwatches(t, db)
@@ -205,7 +203,6 @@ func TestDirwatchesRemove(t *testing.T) {
 
 // Removing an existing dirwatch and adding a new one in the same Write must do both.
 func TestDirwatchesWriteRemoveAndAddTogether(t *testing.T) {
-	t.Skip("known bug: sync-list Write skips deletions when any item has a nil Id; fixed during ent migration")
 
 	forEachDatabase(t, func(t *testing.T, db *Database) {
 		dirwatches := writeTwoDirwatches(t, db)

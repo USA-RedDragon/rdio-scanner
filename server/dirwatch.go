@@ -16,8 +16,7 @@
 package main
 
 import (
-	"database/sql"
-	"encoding/json"
+	"context"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -33,6 +32,7 @@ import (
 	"sync"
 	"time"
 
+	entdirwatch "github.com/USA-RedDragon/rdio-scanner/server/ent/dirwatch"
 	"github.com/fsnotify/fsnotify"
 )
 
@@ -774,20 +774,6 @@ func (dirwatches *Dirwatches) FromMap(f []any) *Dirwatches {
 }
 
 func (dirwatches *Dirwatches) Read(db *Database) error {
-	var (
-		delay       sql.NullFloat64
-		err         error
-		extension   sql.NullString
-		id          sql.NullFloat64
-		frequency   sql.NullFloat64
-		kind        sql.NullString
-		mask        sql.NullString
-		order       sql.NullFloat64
-		rows        *sql.Rows
-		systemId    sql.NullFloat64
-		talkgroupId sql.NullFloat64
-	)
-
 	dirwatches.mutex.Lock()
 	defer dirwatches.mutex.Unlock()
 
@@ -795,73 +781,50 @@ func (dirwatches *Dirwatches) Read(db *Database) error {
 
 	dirwatches.List = []*Dirwatch{}
 
-	formatError := func(err error) error {
-		return fmt.Errorf("dirwatches.read: %v", err)
+	records, err := db.Ent.Dirwatch.Query().All(context.Background())
+	if err != nil {
+		return fmt.Errorf("dirwatches.read: %w", err)
 	}
 
-	q := "select `_id`, `delay`, `deleteAfter`, `directory`, `disabled`, `extension`, `frequency`, `mask`, `order`, `systemId`, `talkgroupId`, `type`, `usePolling` from `rdioscannerdirwatches`"
-	if db.Config.DbType == DbTypePostgresql {
-		q = "select _id, delay, deleteAfter, directory, disabled, extension, frequency, mask, \"order\", systemId, talkgroupId, type, usePolling from rdioscannerdirwatches"
-	}
-	if rows, err = db.Sql.Query(q); err != nil {
-		return formatError(err)
-	}
-
-	for rows.Next() {
+	for _, r := range records {
 		dirwatch := NewDirwatch()
 
-		if err = rows.Scan(&id, &delay, &dirwatch.DeleteAfter, &dirwatch.Directory, &dirwatch.Disabled, &extension, &frequency, &mask, &order, &systemId, &talkgroupId, &kind, &dirwatch.UsePolling); err != nil {
-			break
-		}
+		dirwatch.Id = uint(r.ID)
+		dirwatch.Directory = r.Directory
+		dirwatch.DeleteAfter = r.DeleteAfter != nil && *r.DeleteAfter
+		dirwatch.Disabled = r.Disabled != nil && *r.Disabled
+		dirwatch.UsePolling = r.UsePolling != nil && *r.UsePolling
 
-		if id.Valid && id.Float64 > 0 {
-			dirwatch.Id = uint(id.Float64)
+		if r.Delay != nil && *r.Delay > 0 {
+			dirwatch.Delay = uint(*r.Delay)
 		}
-
-		if delay.Valid && id.Float64 > 0 {
-			dirwatch.Delay = uint(delay.Float64)
+		if r.Extension != nil && len(*r.Extension) > 0 {
+			dirwatch.Extension = *r.Extension
 		}
-
-		if extension.Valid && len(extension.String) > 0 {
-			dirwatch.Extension = extension.String
+		if r.Frequency != nil && *r.Frequency > 0 {
+			dirwatch.Frequency = uint(*r.Frequency)
 		}
-
-		if frequency.Valid && frequency.Float64 > 0 {
-			dirwatch.Frequency = uint(frequency.Float64)
+		if r.Mask != nil && len(*r.Mask) > 0 {
+			dirwatch.Mask = *r.Mask
 		}
-
-		if mask.Valid && len(mask.String) > 0 {
-			dirwatch.Mask = mask.String
+		if r.Order != nil && *r.Order > 0 {
+			dirwatch.Order = uint(*r.Order)
 		}
-
-		if order.Valid && order.Float64 > 0 {
-			dirwatch.Order = uint(order.Float64)
+		if r.SystemID != nil && *r.SystemID > 0 {
+			dirwatch.SystemId = uint(*r.SystemID)
 		}
-
-		if systemId.Valid && systemId.Float64 > 0 {
-			dirwatch.SystemId = uint(systemId.Float64)
+		if r.TalkgroupID != nil && *r.TalkgroupID > 0 {
+			dirwatch.TalkgroupId = uint(*r.TalkgroupID)
 		}
-
-		if talkgroupId.Valid && talkgroupId.Float64 > 0 {
-			dirwatch.TalkgroupId = uint(talkgroupId.Float64)
-		}
-
-		if kind.Valid && len(kind.String) > 0 {
-			dirwatch.Kind = kind.String
+		if r.Type != nil && len(*r.Type) > 0 {
+			dirwatch.Kind = *r.Type
 		}
 
 		dirwatches.List = append(dirwatches.List, dirwatch)
 	}
 
-	rows.Close()
-
-	if err != nil {
-		return formatError(err)
-	}
-
 	return nil
 }
-
 func (dirwatches *Dirwatches) Start(controller *Controller) {
 	for i := range dirwatches.List {
 		if err := dirwatches.List[i].Start(controller); err != nil {
@@ -878,105 +841,66 @@ func (dirwatches *Dirwatches) Stop() {
 }
 
 func (dirwatches *Dirwatches) Write(db *Database) error {
-	var (
-		count  uint
-		err    error
-		rows   *sql.Rows
-		rowIds = []uint{}
-	)
-
 	dirwatches.mutex.Lock()
 	defer dirwatches.mutex.Unlock()
 
+	ctx := context.Background()
+
 	formatError := func(err error) error {
-		return fmt.Errorf("dirwatches.write: %v", err)
+		return fmt.Errorf("dirwatches.write: %w", err)
 	}
 
-	q := "select `_id` from `rdioscannerdirwatches`"
-	if db.Config.DbType == DbTypePostgresql {
-		q = "select _id from rdioscannerdirwatches"
+	keep := make([]int, 0, len(dirwatches.List))
+	for _, dirwatch := range dirwatches.List {
+		if id, ok := rowID(dirwatch.Id); ok {
+			keep = append(keep, id)
+		}
 	}
-	if rows, err = db.Sql.Query(q); err != nil {
+
+	if _, err := db.Ent.Dirwatch.Delete().Where(entdirwatch.IDNotIn(keep...)).Exec(ctx); err != nil {
 		return formatError(err)
 	}
 
-	for rows.Next() {
-		var rowId uint
-		if err = rows.Scan(&rowId); err != nil {
-			break
-		}
-		remove := true
-		for _, dirwatch := range dirwatches.List {
-			if dirwatch.Id == nil || dirwatch.Id == rowId {
-				remove = false
-				break
+	for _, dirwatch := range dirwatches.List {
+		if id, ok := rowID(dirwatch.Id); ok {
+			upd := db.Ent.Dirwatch.UpdateOneID(id).
+				SetDirectory(dirwatch.Directory).
+				SetDeleteAfter(dirwatch.DeleteAfter).
+				SetDisabled(dirwatch.Disabled).
+				SetUsePolling(dirwatch.UsePolling)
+			setOrClearInt(upd.SetDelay, upd.ClearDelay, nillablePosInt(dirwatch.Delay))
+			setOrClearInt(upd.SetFrequency, upd.ClearFrequency, nillablePosInt(dirwatch.Frequency))
+			setOrClearInt(upd.SetOrder, upd.ClearOrder, nillablePosInt(dirwatch.Order))
+			setOrClearInt(upd.SetSystemID, upd.ClearSystemID, nillablePosInt(dirwatch.SystemId))
+			setOrClearInt(upd.SetTalkgroupID, upd.ClearTalkgroupID, nillablePosInt(dirwatch.TalkgroupId))
+			setOrClearStr(upd.SetExtension, upd.ClearExtension, nillableStr(dirwatch.Extension))
+			setOrClearStr(upd.SetMask, upd.ClearMask, nillableStr(dirwatch.Mask))
+			setOrClearStr(upd.SetType, upd.ClearType, nillableStr(dirwatch.Kind))
+			if err := upd.Exec(ctx); err != nil {
+				return formatError(err)
 			}
-		}
-		if remove {
-			rowIds = append(rowIds, rowId)
-		}
-	}
-
-	rows.Close()
-
-	if err != nil {
-		return formatError(err)
-	}
-
-	if len(rowIds) > 0 {
-		if b, err := json.Marshal(rowIds); err == nil {
-			s := string(b)
-			s = strings.ReplaceAll(s, "[", "(")
-			s = strings.ReplaceAll(s, "]", ")")
-			q := fmt.Sprintf("delete from `rdioscannerdirwatches` where `_id` in %v", s)
-			if db.Config.DbType == DbTypePostgresql {
-				q = fmt.Sprintf("delete from rdioscannerdirwatches where _id in %v", s)
-			}
-			if _, err = db.Sql.Exec(q); err != nil {
+		} else {
+			if err := db.Ent.Dirwatch.Create().
+				SetDirectory(dirwatch.Directory).
+				SetDeleteAfter(dirwatch.DeleteAfter).
+				SetDisabled(dirwatch.Disabled).
+				SetUsePolling(dirwatch.UsePolling).
+				SetNillableDelay(nillablePosInt(dirwatch.Delay)).
+				SetNillableFrequency(nillablePosInt(dirwatch.Frequency)).
+				SetNillableOrder(nillablePosInt(dirwatch.Order)).
+				SetNillableSystemID(nillablePosInt(dirwatch.SystemId)).
+				SetNillableTalkgroupID(nillablePosInt(dirwatch.TalkgroupId)).
+				SetNillableExtension(nillableStr(dirwatch.Extension)).
+				SetNillableMask(nillableStr(dirwatch.Mask)).
+				SetNillableType(nillableStr(dirwatch.Kind)).
+				Exec(ctx); err != nil {
 				return formatError(err)
 			}
 		}
 	}
 
-	for _, dirwatch := range dirwatches.List {
-		q := "select count(*) from `rdioscannerdirwatches` where `_id` = ?"
-		if db.Config.DbType == DbTypePostgresql {
-			q = "select count(*) from rdioscannerdirwatches where _id = $1"
-		}
-		if err = db.Sql.QueryRow(q, dirwatch.Id).Scan(&count); err != nil {
-			break
-		}
-
-		if count == 0 {
-			if db.Config.DbType == DbTypePostgresql {
-				q = "insert into rdioscannerdirwatches (delay, deleteAfter, directory, disabled, extension, frequency, mask, \"order\", systemId, talkgroupId, type, usePolling) values ($1, $2, $3, $4, $5, $6, $7, $8, $9 , $10, $11, $12)"
-				if _, err = db.Sql.Exec(q, dirwatch.Delay, dirwatch.DeleteAfter, dirwatch.Directory, dirwatch.Disabled, dirwatch.Extension, dirwatch.Frequency, dirwatch.Mask, dirwatch.Order, dirwatch.SystemId, dirwatch.TalkgroupId, dirwatch.Kind, dirwatch.UsePolling); err != nil {
-					break
-				}
-			} else {
-				q = "insert into `rdioscannerdirwatches` (`_id`, `delay`, `deleteAfter`, `directory`, `disabled`, `extension`, `frequency`, `mask`, `order`, `systemId`, `talkgroupId`, `type`, `usePolling`) values (?, ?, ?, ?, ?, ?, ?, ?, ? ,? ,? ,? ,?)"
-				if _, err = db.Sql.Exec(q, dirwatch.Id, dirwatch.Delay, dirwatch.DeleteAfter, dirwatch.Directory, dirwatch.Disabled, dirwatch.Extension, dirwatch.Frequency, dirwatch.Mask, dirwatch.Order, dirwatch.SystemId, dirwatch.TalkgroupId, dirwatch.Kind, dirwatch.UsePolling); err != nil {
-					break
-				}
-			}
-		} else {
-			q := "update `rdioscannerdirwatches` set `_id` = ?, `delay` = ?, `deleteAfter` = ?, `directory` = ?, `disabled` = ?, `extension` = ?, `frequency` = ?, `mask` = ?, `order` = ?, `systemId` = ?, `talkgroupId` = ?, `type` = ?, `usePolling` = ? where `_id` = ?"
-			if db.Config.DbType == DbTypePostgresql {
-				q = "update rdioscannerdirwatches set _id = $1, delay = $2, deleteAfter = $3, directory = $4, disabled = $5, extension = $6, frequency = $7, mask = $8, \"order\" = $9, systemId = $10, talkgroupId = $11, type = $12, usePolling = $13 where _id = $14"
-			}
-			if _, err = db.Sql.Exec(q, dirwatch.Id, dirwatch.Delay, dirwatch.DeleteAfter, dirwatch.Directory, dirwatch.Disabled, dirwatch.Extension, dirwatch.Frequency, dirwatch.Mask, dirwatch.Order, dirwatch.SystemId, dirwatch.TalkgroupId, dirwatch.Kind, dirwatch.UsePolling, dirwatch.Id); err != nil {
-				break
-			}
-		}
-	}
-
-	if err != nil {
-		return formatError(err)
-	}
-
 	return nil
 }
-
 func (dirwatch *Dirwatch) isDir(d string) bool {
 	if fi, err := os.Stat(d); err == nil {
 		if fi.IsDir() {

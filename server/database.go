@@ -165,6 +165,14 @@ func nillablePosInt(v any) *int {
 	return nil
 }
 
+// nillableStr returns a pointer to the non-empty string in v, else nil.
+func nillableStr(v any) *string {
+	if s, ok := v.(string); ok && len(s) > 0 {
+		return &s
+	}
+	return nil
+}
+
 func (db *Database) ParseDateTime(f any) (time.Time, error) {
 	switch v := f.(type) {
 	case []uint8:
@@ -800,4 +808,22 @@ func (db *Database) seedTags() error {
 	}
 
 	return nil
+}
+
+// setOrClearInt sets the field to *v, or clears it when v is nil (used on ent
+// updates, where SetNillable leaves a nil pointer unchanged rather than NULL).
+func setOrClearInt[T any](set func(int) T, clear func() T, v *int) {
+	if v != nil {
+		set(*v)
+	} else {
+		clear()
+	}
+}
+
+func setOrClearStr[T any](set func(string) T, clear func() T, v *string) {
+	if v != nil {
+		set(*v)
+	} else {
+		clear()
+	}
 }
