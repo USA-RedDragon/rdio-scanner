@@ -122,7 +122,6 @@ func TestApikeysReadWrite(t *testing.T) {
 func TestApikeysRemove(t *testing.T) {
 	forEachDatabase(t, func(t *testing.T, db *Database) {
 		if db.Config.DbType == DbTypeMysql || db.Config.DbType == DbTypeMariadb {
-			t.Skip("known bug: api key delete uses table rdioScannerApikeys (wrong case) and fails on mysql/mariadb; fixed during ent migration")
 		}
 
 		apikeys := writeTwoApikeys(t, db)
@@ -149,7 +148,6 @@ func TestApikeysRemove(t *testing.T) {
 
 // Removing an existing api key and adding a new one in the same Write must do both.
 func TestApikeysWriteRemoveAndAddTogether(t *testing.T) {
-	t.Skip("known bug: sync-list Write skips deletions when any item has a nil Id; fixed during ent migration")
 
 	forEachDatabase(t, func(t *testing.T, db *Database) {
 		apikeys := writeTwoApikeys(t, db)
@@ -172,7 +170,6 @@ func TestApikeysWriteRemoveAndAddTogether(t *testing.T) {
 // Writing back api keys exactly as Read returned them must work. Read decodes
 // list-form systems into []any, which Write passes straight to the driver.
 func TestApikeysWriteReadBackScopedSystems(t *testing.T) {
-	t.Skip("known bug: Write cannot store list-form systems as returned by Read ([]any is not a driver value); fixed during ent migration")
 
 	forEachDatabase(t, func(t *testing.T, db *Database) {
 		apikeys := writeTwoApikeys(t, db)

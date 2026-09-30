@@ -16,12 +16,14 @@
 package main
 
 import (
-	"database/sql"
+	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"sync"
 	"time"
+
+	"github.com/USA-RedDragon/rdio-scanner/server/ent"
+	entaccess "github.com/USA-RedDragon/rdio-scanner/server/ent/access"
 )
 
 type Access struct {
@@ -205,76 +207,46 @@ func (accesses *Accesses) IsRestricted() bool {
 }
 
 func (accesses *Accesses) Read(db *Database) error {
-	var (
-		err        error
-		expiration any
-		id         sql.NullFloat64
-		limit      sql.NullFloat64
-		order      sql.NullFloat64
-		rows       *sql.Rows
-		systems    string
-		t          time.Time
-	)
-
 	accesses.mutex.Lock()
 	defer accesses.mutex.Unlock()
 
 	accesses.List = []*Access{}
 
-	formatError := func(err error) error {
-		return fmt.Errorf("accesses.read: %v", err)
+	records, err := db.Ent.Access.Query().All(context.Background())
+	if err != nil {
+		return fmt.Errorf("accesses.read: %w", err)
 	}
 
-	query := "select `_id`, `code`, `expiration`, `ident`, `limit`, `order`, `systems` from `rdioscanneraccesses`"
-	if db.Config.DbType == DbTypePostgresql {
-		query = "select _id, code, expiration, ident, \"limit\", \"order\", systems from rdioscanneraccesses"
-	}
-	if rows, err = db.Sql.Query(query); err != nil {
-		return formatError(err)
-	}
-
-	for rows.Next() {
-		access := &Access{}
-
-		if err = rows.Scan(&id, &access.Code, &expiration, &access.Ident, &limit, &order, &systems); err != nil {
-			break
-		}
-
-		if id.Valid && id.Float64 > 0 {
-			access.Id = uint(id.Float64)
-		}
-
-		if len(access.Code) == 0 {
+	for _, r := range records {
+		if len(r.Code) == 0 {
 			continue
 		}
 
-		if t, err = db.ParseDateTime(expiration); err == nil {
-			access.Expiration = t
+		access := &Access{Id: uint(r.ID), Code: r.Code}
+
+		if r.Expiration != nil {
+			access.Expiration = r.Expiration.UTC()
 		}
 
-		if len(access.Ident) == 0 {
+		if r.Ident != nil && len(*r.Ident) > 0 {
+			access.Ident = *r.Ident
+		} else {
 			access.Ident = defaults.access.ident
 		}
 
-		if limit.Valid && limit.Float64 > 0 {
-			access.Limit = uint(limit.Float64)
+		if r.Limit != nil && *r.Limit > 0 {
+			access.Limit = uint(*r.Limit)
 		}
 
-		if order.Valid && order.Float64 > 0 {
-			access.Order = uint(order.Float64)
+		if r.Order != nil && *r.Order > 0 {
+			access.Order = uint(*r.Order)
 		}
 
-		if err = json.Unmarshal([]byte(systems), &access.Systems); err != nil {
+		if err = json.Unmarshal([]byte(r.Systems), &access.Systems); err != nil {
 			access.Systems = []any{}
 		}
 
 		accesses.List = append(accesses.List, access)
-	}
-
-	rows.Close()
-
-	if err != nil {
-		return formatError(err)
 	}
 
 	return nil
@@ -297,109 +269,69 @@ func (accesses *Accesses) Remove(access *Access) (*Accesses, bool) {
 }
 
 func (accesses *Accesses) Write(db *Database) error {
-	var (
-		count   uint
-		err     error
-		rows    *sql.Rows
-		rowIds  = []uint{}
-		systems any
-	)
-
 	accesses.mutex.Lock()
 	defer accesses.mutex.Unlock()
 
+	ctx := context.Background()
+
 	formatError := func(err error) error {
-		return fmt.Errorf("accesses.write: %v", err)
+		return fmt.Errorf("accesses.write: %w", err)
 	}
 
-	query := "select `_id` from `rdioscanneraccesses`"
-	if db.Config.DbType == DbTypePostgresql {
-		query = "select _id from rdioscanneraccesses"
+	keep := make([]int, 0, len(accesses.List))
+	for _, access := range accesses.List {
+		if id, ok := rowID(access.Id); ok {
+			keep = append(keep, id)
+		}
 	}
-	if rows, err = db.Sql.Query(query); err != nil {
+
+	if _, err := db.Ent.Access.Delete().Where(entaccess.IDNotIn(keep...)).Exec(ctx); err != nil {
 		return formatError(err)
 	}
 
-	for rows.Next() {
-		var id uint
-		if err = rows.Scan(&id); err != nil {
-			break
-		}
-		remove := true
-		for _, access := range accesses.List {
-			if access.Id == nil || access.Id == id {
-				remove = false
-				break
+	for _, access := range accesses.List {
+		if id, ok := rowID(access.Id); ok {
+			upd := db.Ent.Access.UpdateOneID(id).
+				SetCode(access.Code).
+				SetIdent(access.Ident).
+				SetSystems(systemsText(access.Systems))
+			applyAccessExpirationLimitOrder(upd, access)
+			if err := upd.Exec(ctx); err != nil {
+				return formatError(err)
 			}
-		}
-		if remove {
-			rowIds = append(rowIds, id)
-		}
-	}
-
-	rows.Close()
-
-	if err != nil {
-		return formatError(err)
-	}
-
-	if len(rowIds) > 0 {
-		if b, err := json.Marshal(rowIds); err == nil {
-			s := string(b)
-			s = strings.ReplaceAll(s, "[", "(")
-			s = strings.ReplaceAll(s, "]", ")")
-			q := fmt.Sprintf("delete from `rdioscanneraccesses` where `_id` in %v", s)
-			if db.Config.DbType == DbTypePostgresql {
-				q = fmt.Sprintf("delete from rdioscanneraccesses where _id in %v", s)
-			}
-			if _, err = db.Sql.Exec(q); err != nil {
+		} else {
+			create := db.Ent.Access.Create().
+				SetCode(access.Code).
+				SetIdent(access.Ident).
+				SetSystems(systemsText(access.Systems)).
+				SetNillableExpiration(nillableTime(access.Expiration)).
+				SetNillableLimit(nillablePosInt(access.Limit)).
+				SetNillableOrder(nillablePosInt(access.Order))
+			if err := create.Exec(ctx); err != nil {
 				return formatError(err)
 			}
 		}
 	}
 
-	for _, access := range accesses.List {
-		switch access.Systems {
-		case "*":
-			systems = `"*"`
-		default:
-			systems = access.Systems
-		}
-
-		q := "select count(*) from `rdioscanneraccesses` where `_id` = ?"
-		if db.Config.DbType == DbTypePostgresql {
-			q = "select count(*) from rdioscanneraccesses where _id = $1"
-		}
-		if err = db.Sql.QueryRow(q, access.Id).Scan(&count); err != nil {
-			break
-		}
-
-		if count == 0 {
-			if db.Config.DbType == DbTypePostgresql {
-				q = "insert into rdioscanneraccesses (code, expiration, ident, \"limit\", \"order\", systems) values ($1, $2, $3, $4, $5, $6)"
-				if _, err = db.Sql.Exec(q, access.Code, access.Expiration, access.Ident, access.Limit, access.Order, systems); err != nil {
-					break
-				}
-			} else {
-				q = "insert into `rdioscanneraccesses` (`_id`, `code`, `expiration`, `ident`, `limit`, `order`, `systems`) values (?, ?, ?, ?, ?, ?, ?)"
-				if _, err = db.Sql.Exec(q, access.Id, access.Code, access.Expiration, access.Ident, access.Limit, access.Order, systems); err != nil {
-					break
-				}
-			}
-		} else {
-			q := "update `rdioscanneraccesses` set `_id` = ?, `code` = ?, `expiration` = ?, `ident` = ?, `limit` = ?, `order` = ?, `systems` = ? where `_id` = ?"
-			if db.Config.DbType == DbTypePostgresql {
-				q = "update rdioscanneraccesses set _id = $1, code = $2, expiration = $3, ident = $4, \"limit\" = $5, \"order\" = $6, systems = $7 where _id = $8"
-			}
-			if _, err = db.Sql.Exec(q, access.Id, access.Code, access.Expiration, access.Ident, access.Limit, access.Order, systems, access.Id); err != nil {
-				break
-			}
-		}
-	}
-
-	if err != nil {
-		return formatError(err)
-	}
-
 	return nil
+}
+
+// applyAccessExpirationLimitOrder sets or clears the nullable columns on an
+// update (SetNillable leaves a nil pointer unchanged, so clearing needs Clear).
+func applyAccessExpirationLimitOrder(upd *ent.AccessUpdateOne, access *Access) {
+	if t := nillableTime(access.Expiration); t != nil {
+		upd.SetExpiration(*t)
+	} else {
+		upd.ClearExpiration()
+	}
+	if n := nillablePosInt(access.Limit); n != nil {
+		upd.SetLimit(*n)
+	} else {
+		upd.ClearLimit()
+	}
+	if n := nillablePosInt(access.Order); n != nil {
+		upd.SetOrder(*n)
+	} else {
+		upd.ClearOrder()
+	}
 }

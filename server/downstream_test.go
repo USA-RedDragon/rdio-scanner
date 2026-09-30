@@ -120,7 +120,6 @@ func TestDownstreamsReadWrite(t *testing.T) {
 
 // Removing an existing downstream and adding a new one in the same Write must do both.
 func TestDownstreamsWriteRemoveAndAddTogether(t *testing.T) {
-	t.Skip("known bug: sync-list Write skips deletions when any item has a nil Id; fixed during ent migration")
 
 	forEachDatabase(t, func(t *testing.T, db *Database) {
 		downstreams := NewDownstreams()
@@ -145,7 +144,6 @@ func TestDownstreamsWriteRemoveAndAddTogether(t *testing.T) {
 // Writing back a downstream exactly as Read returned it must work. Read decodes
 // list-form systems into []any, which Write passes straight to the driver.
 func TestDownstreamsWriteReadBackScopedSystems(t *testing.T) {
-	t.Skip("known bug: Write cannot store list-form systems as returned by Read ([]any is not a driver value); fixed during ent migration")
 
 	forEachDatabase(t, func(t *testing.T, db *Database) {
 		const systems = `[{"id":1,"talkgroups":[10]}]`

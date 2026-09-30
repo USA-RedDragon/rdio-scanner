@@ -145,7 +145,6 @@ func TestAccessesReadWrite(t *testing.T) {
 
 // Removing an existing access and adding a new one in the same Write must do both.
 func TestAccessesWriteRemoveAndAddTogether(t *testing.T) {
-	t.Skip("known bug: sync-list Write skips deletions when any item has a nil Id; fixed during ent migration")
 
 	forEachDatabase(t, func(t *testing.T, db *Database) {
 		accesses := NewAccesses()
@@ -169,7 +168,6 @@ func TestAccessesWriteRemoveAndAddTogether(t *testing.T) {
 // Reachable: the admin user-add/user-remove handlers Add/Remove on the
 // in-memory list (loaded by Read) and then Write the whole list.
 func TestAccessesWriteReadBackScopedSystems(t *testing.T) {
-	t.Skip("known bug: Write cannot store list-form systems as returned by Read ([]any is not a driver value); fixed during ent migration")
 
 	forEachDatabase(t, func(t *testing.T, db *Database) {
 		accesses := NewAccesses()

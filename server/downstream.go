@@ -17,17 +17,17 @@ package main
 
 import (
 	"bytes"
-	"database/sql"
+	"context"
 	"encoding/json"
 	"fmt"
 	"mime/multipart"
 	"net/http"
 	"net/url"
 	"path"
-	"strings"
 	"sync"
 	"time"
 
+	entdownstream "github.com/USA-RedDragon/rdio-scanner/server/ent/downstream"
 	"github.com/google/uuid"
 )
 
@@ -382,65 +382,38 @@ func (downstreams *Downstreams) FromMap(f []any) *Downstreams {
 }
 
 func (downstreams *Downstreams) Read(db *Database) error {
-	var (
-		err     error
-		id      sql.NullFloat64
-		order   sql.NullFloat64
-		rows    *sql.Rows
-		systems string
-	)
-
 	downstreams.mutex.Lock()
 	defer downstreams.mutex.Unlock()
 
 	downstreams.List = []*Downstream{}
 
-	formatError := func(err error) error {
-		return fmt.Errorf("downstreams.read: %v", err)
+	records, err := db.Ent.Downstream.Query().All(context.Background())
+	if err != nil {
+		return fmt.Errorf("downstreams.read: %w", err)
 	}
 
-	q := "select `_id`, `apiKey`, `disabled`, `order`, `systems`, `url` from `rdioscannerdownstreams`"
-	if db.Config.DbType == DbTypePostgresql {
-		q = "select _id, apiKey, disabled, \"order\", systems, url from rdioscannerdownstreams"
-	}
-	if rows, err = db.Sql.Query(q); err != nil {
-		return formatError(err)
-	}
-
-	for rows.Next() {
-		downstream := &Downstream{}
-
-		if err = rows.Scan(&id, &downstream.Apikey, &downstream.Disabled, &order, &systems, &downstream.Url); err != nil {
-			break
+	for _, r := range records {
+		if len(r.URL) == 0 {
+			continue
 		}
 
-		if id.Valid && id.Float64 > 0 {
-			downstream.Id = uint(id.Float64)
-		}
+		downstream := &Downstream{Id: uint(r.ID), Apikey: r.APIKey, Url: r.URL}
+
+		downstream.Disabled = r.Disabled != nil && *r.Disabled
 
 		if len(downstream.Apikey) == 0 {
 			downstream.Apikey = uuid.New().String()
 		}
 
-		if order.Valid && order.Float64 > 0 {
-			downstream.Order = uint(order.Float64)
+		if r.Order != nil && *r.Order > 0 {
+			downstream.Order = uint(*r.Order)
 		}
 
-		if err = json.Unmarshal([]byte(systems), &downstream.Systems); err != nil {
+		if err = json.Unmarshal([]byte(r.Systems), &downstream.Systems); err != nil {
 			downstream.Systems = []any{}
 		}
 
-		if len(downstream.Url) == 0 {
-			continue
-		}
-
 		downstreams.List = append(downstreams.List, downstream)
-	}
-
-	rows.Close()
-
-	if err != nil {
-		return formatError(err)
 	}
 
 	return nil
@@ -463,109 +436,52 @@ func (downstreams *Downstreams) Send(controller *Controller, call *Call) {
 }
 
 func (downstreams *Downstreams) Write(db *Database) error {
-	var (
-		count   uint
-		err     error
-		rows    *sql.Rows
-		rowIds  = []uint{}
-		systems any
-	)
-
 	downstreams.mutex.Lock()
 	defer downstreams.mutex.Unlock()
 
+	ctx := context.Background()
+
 	formatError := func(err error) error {
-		return fmt.Errorf("downstreams.write: %v", err)
+		return fmt.Errorf("downstreams.write: %w", err)
 	}
 
-	q := "select `_id` from `rdioscannerdownstreams`"
-	if db.Config.DbType == DbTypePostgresql {
-		q = "select _id from rdioscannerdownstreams"
+	keep := make([]int, 0, len(downstreams.List))
+	for _, downstream := range downstreams.List {
+		if id, ok := rowID(downstream.Id); ok {
+			keep = append(keep, id)
+		}
 	}
-	if rows, err = db.Sql.Query(q); err != nil {
+
+	if _, err := db.Ent.Downstream.Delete().Where(entdownstream.IDNotIn(keep...)).Exec(ctx); err != nil {
 		return formatError(err)
-	}
-
-	for rows.Next() {
-		var rowId uint
-		if err = rows.Scan(&rowId); err != nil {
-			break
-		}
-		remove := true
-		for _, downstream := range downstreams.List {
-			if downstream.Id == nil || downstream.Id == rowId {
-				remove = false
-				break
-			}
-		}
-		if remove {
-			rowIds = append(rowIds, rowId)
-		}
-	}
-
-	rows.Close()
-
-	if err != nil {
-		return formatError(err)
-	}
-
-	if len(rowIds) > 0 {
-		if b, err := json.Marshal(rowIds); err == nil {
-			s := string(b)
-			s = strings.ReplaceAll(s, "[", "(")
-			s = strings.ReplaceAll(s, "]", ")")
-			q := fmt.Sprintf("delete from `rdioscannerdownstreams` where `_id` in %v", s)
-			if db.Config.DbType == DbTypePostgresql {
-				q = fmt.Sprintf("delete from rdioscannerdownstreams where _id in %v", s)
-			}
-			if _, err = db.Sql.Exec(q); err != nil {
-				return formatError(err)
-			}
-		}
 	}
 
 	for _, downstream := range downstreams.List {
-		switch downstream.Systems {
-		case "*":
-			systems = `"*"`
-		default:
-			systems = downstream.Systems
-		}
-
-		q := "select count(*) from `rdioscannerdownstreams` where `_id` = ?"
-		if db.Config.DbType == DbTypePostgresql {
-			q = "select count(*) from rdioscannerdownstreams where _id = $1"
-		}
-		if err = db.Sql.QueryRow(q, downstream.Id).Scan(&count); err != nil {
-			break
-		}
-
-		if count == 0 {
-			if db.Config.DbType == DbTypePostgresql {
-				q = "insert into rdioscannerdownstreams (apiKey, disabled, \"order\", systems, url) values ($1, $2, $3, $4, $5)"
-				if _, err = db.Sql.Exec(q, downstream.Apikey, downstream.Disabled, downstream.Order, systems, downstream.Url); err != nil {
-					break
-				}
+		if id, ok := rowID(downstream.Id); ok {
+			upd := db.Ent.Downstream.UpdateOneID(id).
+				SetAPIKey(downstream.Apikey).
+				SetDisabled(downstream.Disabled).
+				SetSystems(systemsText(downstream.Systems)).
+				SetURL(downstream.Url)
+			if n := nillablePosInt(downstream.Order); n != nil {
+				upd.SetOrder(*n)
 			} else {
-				q = "insert into `rdioscannerdownstreams` (`_id`, `apiKey`, `disabled`, `order`, `systems`, `url`) values (?, ?, ?, ?, ?, ?)"
-				if _, err = db.Sql.Exec(q, downstream.Id, downstream.Apikey, downstream.Disabled, downstream.Order, systems, downstream.Url); err != nil {
-					break
-				}
+				upd.ClearOrder()
 			}
-
+			if err := upd.Exec(ctx); err != nil {
+				return formatError(err)
+			}
 		} else {
-			q := "update `rdioscannerdownstreams` set `_id` = ?, `apiKey` = ?, `disabled` = ?, `order` = ?, `systems` = ?, `url` = ? where `_id` = ?"
-			if db.Config.DbType == DbTypePostgresql {
-				q = "update rdioscannerdownstreams set _id = $1, apiKey = $2, disabled = $3, \"order\" = $4, systems = $5, url = $6 where _id = $7"
-			}
-			if _, err = db.Sql.Exec(q, downstream.Id, downstream.Apikey, downstream.Disabled, downstream.Order, systems, downstream.Url, downstream.Id); err != nil {
-				break
+			if err := db.Ent.Downstream.Create().
+				SetAPIKey(downstream.Apikey).
+				SetDisabled(downstream.Disabled).
+				SetSystems(systemsText(downstream.Systems)).
+				SetURL(downstream.Url).
+				SetNillableOrder(nillablePosInt(downstream.Order)).
+				Exec(ctx); err != nil {
+				return formatError(err)
 			}
 		}
-	}
-
-	if err != nil {
-		return formatError(err)
 	}
 
 	return nil

@@ -127,6 +127,44 @@ func rowID(v any) (int, bool) {
 	return 0, false
 }
 
+// systemsText normalizes an access/apikey/downstream "systems" value — the
+// string "*", a JSON string, or a []any that Read decoded — to the JSON text
+// stored in the database. Writing a value Read had decoded into []any used to
+// fail (a slice is not a driver value).
+func systemsText(v any) string {
+	switch s := v.(type) {
+	case string:
+		if s == "*" {
+			return `"*"`
+		}
+		return s
+	case nil:
+		return `"*"`
+	default:
+		if b, err := json.Marshal(v); err == nil {
+			return string(b)
+		}
+		return `"*"`
+	}
+}
+
+// nillableTime returns a pointer to v when it holds a non-zero time, else nil.
+func nillableTime(v any) *time.Time {
+	if t, ok := v.(time.Time); ok && !t.IsZero() {
+		return &t
+	}
+	return nil
+}
+
+// nillablePosInt returns a pointer to the positive int in v, else nil. Used for
+// the optional "limit"/"order" columns, which the API sends as positive uints.
+func nillablePosInt(v any) *int {
+	if n, ok := rowID(v); ok {
+		return &n
+	}
+	return nil
+}
+
 func (db *Database) ParseDateTime(f any) (time.Time, error) {
 	switch v := f.(type) {
 	case []uint8:

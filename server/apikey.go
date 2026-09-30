@@ -16,12 +16,12 @@
 package main
 
 import (
-	"database/sql"
+	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"sync"
 
+	entapikey "github.com/USA-RedDragon/rdio-scanner/server/ent/apikey"
 	"github.com/google/uuid"
 )
 
@@ -153,43 +153,24 @@ func (apikeys *Apikeys) GetApikey(key string) (apikey *Apikey, ok bool) {
 }
 
 func (apikeys *Apikeys) Read(db *Database) error {
-	var (
-		err     error
-		id      sql.NullFloat64
-		order   sql.NullFloat64
-		rows    *sql.Rows
-		systems string
-	)
-
 	apikeys.mutex.Lock()
 	defer apikeys.mutex.Unlock()
 
 	apikeys.List = []*Apikey{}
 
-	formatError := func(err error) error {
-		return fmt.Errorf("apikeys.read: %v", err)
+	records, err := db.Ent.Apikey.Query().All(context.Background())
+	if err != nil {
+		return fmt.Errorf("apikeys.read: %w", err)
 	}
 
-	q := "select `_id`, `disabled`, `ident`, `key`, `order`, `systems` from `rdioscannerapikeys`"
-	if db.Config.DbType == DbTypePostgresql {
-		q = "select _id, disabled, ident, key, \"order\", systems from rdioscannerapikeys"
-	}
-	if rows, err = db.Sql.Query(q); err != nil {
-		return formatError(err)
-	}
+	for _, r := range records {
+		apikey := &Apikey{Id: uint(r.ID), Key: r.Key}
 
-	for rows.Next() {
-		apikey := &Apikey{}
+		apikey.Disabled = r.Disabled != nil && *r.Disabled
 
-		if err = rows.Scan(&id, &apikey.Disabled, &apikey.Ident, &apikey.Key, &order, &systems); err != nil {
-			break
-		}
-
-		if id.Valid && id.Float64 > 0 {
-			apikey.Id = uint(id.Float64)
-		}
-
-		if len(apikey.Ident) == 0 {
+		if r.Ident != nil && len(*r.Ident) > 0 {
+			apikey.Ident = *r.Ident
+		} else {
 			apikey.Ident = defaults.apikey.ident
 		}
 
@@ -197,129 +178,67 @@ func (apikeys *Apikeys) Read(db *Database) error {
 			apikey.Key = uuid.New().String()
 		}
 
-		if order.Valid && order.Float64 > 0 {
-			apikey.Order = uint(order.Float64)
+		if r.Order != nil && *r.Order > 0 {
+			apikey.Order = uint(*r.Order)
 		}
 
-		if err = json.Unmarshal([]byte(systems), &apikey.Systems); err != nil {
+		if err = json.Unmarshal([]byte(r.Systems), &apikey.Systems); err != nil {
 			apikey.Systems = []any{}
 		}
 
 		apikeys.List = append(apikeys.List, apikey)
 	}
 
-	rows.Close()
-
-	if err != nil {
-		return formatError(err)
-	}
-
 	return nil
 }
 
 func (apikeys *Apikeys) Write(db *Database) error {
-	var (
-		count   uint
-		err     error
-		rows    *sql.Rows
-		rowIds  = []uint{}
-		systems any
-	)
-
 	apikeys.mutex.Lock()
 	defer apikeys.mutex.Unlock()
 
+	ctx := context.Background()
+
 	formatError := func(err error) error {
-		return fmt.Errorf("apikeys.write %v", err)
+		return fmt.Errorf("apikeys.write: %w", err)
 	}
 
-	q := "select `_id` from `rdioscannerapikeys`"
-	if db.Config.DbType == DbTypePostgresql {
-		q = "select _id from rdioscannerapikeys"
+	keep := make([]int, 0, len(apikeys.List))
+	for _, apikey := range apikeys.List {
+		if id, ok := rowID(apikey.Id); ok {
+			keep = append(keep, id)
+		}
 	}
-	if rows, err = db.Sql.Query(q); err != nil {
+
+	if _, err := db.Ent.Apikey.Delete().Where(entapikey.IDNotIn(keep...)).Exec(ctx); err != nil {
 		return formatError(err)
-	}
-
-	for rows.Next() {
-		var id uint
-		if err = rows.Scan(&id); err != nil {
-			break
-		}
-		remove := true
-		for _, apikey := range apikeys.List {
-			if apikey.Id == nil || apikey.Id == id {
-				remove = false
-				break
-			}
-		}
-		if remove {
-			rowIds = append(rowIds, id)
-		}
-	}
-
-	rows.Close()
-
-	if err != nil {
-		return formatError(err)
-	}
-
-	if len(rowIds) > 0 {
-		if b, err := json.Marshal(rowIds); err == nil {
-			s := string(b)
-			s = strings.ReplaceAll(s, "[", "(")
-			s = strings.ReplaceAll(s, "]", ")")
-			q := fmt.Sprintf("delete from `rdioscannerapikeys` where `_id` in %v", s)
-			if db.Config.DbType == DbTypePostgresql {
-				q = fmt.Sprintf("delete from rdioscannerapikeys where _id in %v", s)
-			}
-			if _, err = db.Sql.Exec(q); err != nil {
-				return formatError(err)
-			}
-		}
 	}
 
 	for _, apikey := range apikeys.List {
-		switch apikey.Systems {
-		case "*":
-			systems = `"*"`
-		default:
-			systems = apikey.Systems
-		}
-
-		q := "select count(*) from `rdioscannerapikeys` where `_id` = ?"
-		if db.Config.DbType == DbTypePostgresql {
-			q = "select count(*) from rdioscannerapikeys where _id = $1"
-		}
-		if err = db.Sql.QueryRow(q, apikey.Id).Scan(&count); err != nil {
-			break
-		}
-
-		if count == 0 {
-			if db.Config.DbType == DbTypePostgresql {
-				q = "insert into rdioscannerapikeys (disabled, ident, key, \"order\", systems) values ($1, $2, $3, $4, $5)"
-				if _, err = db.Sql.Exec(q, apikey.Disabled, apikey.Ident, apikey.Key, apikey.Order, systems); err != nil {
-					break
-				}
+		if id, ok := rowID(apikey.Id); ok {
+			upd := db.Ent.Apikey.UpdateOneID(id).
+				SetDisabled(apikey.Disabled).
+				SetIdent(apikey.Ident).
+				SetKey(apikey.Key).
+				SetSystems(systemsText(apikey.Systems))
+			if n := nillablePosInt(apikey.Order); n != nil {
+				upd.SetOrder(*n)
 			} else {
-				q = "insert into `rdioscannerapikeys` (`_id`, `disabled`, `ident`, `key`, `order`, `systems`) values (?, ?, ?, ?, ?, ?)"
-				if _, err = db.Sql.Exec(q, apikey.Id, apikey.Disabled, apikey.Ident, apikey.Key, apikey.Order, systems); err != nil {
-					break
-				}
+				upd.ClearOrder()
+			}
+			if err := upd.Exec(ctx); err != nil {
+				return formatError(err)
 			}
 		} else {
-			q := "update `rdioscannerapikeys` set `_id` = ?, `disabled` = ?, `ident` = ?, `key` = ?, `order` = ?, `systems` = ? where `_id` = ?"
-			if db.Config.DbType == DbTypePostgresql {
-				q = "update rdioscannerapikeys set _id = $1, disabled = $2, ident = $3, key = $4, \"order\" = $5, systems = $6 where _id = $7"
-			}
-			if _, err = db.Sql.Exec(q, apikey.Id, apikey.Disabled, apikey.Ident, apikey.Key, apikey.Order, systems, apikey.Id); err != nil {
-				break
+			if err := db.Ent.Apikey.Create().
+				SetDisabled(apikey.Disabled).
+				SetIdent(apikey.Ident).
+				SetKey(apikey.Key).
+				SetSystems(systemsText(apikey.Systems)).
+				SetNillableOrder(nillablePosInt(apikey.Order)).
+				Exec(ctx); err != nil {
+				return formatError(err)
 			}
 		}
-	}
-
-	if err != nil {
-		return formatError(err)
 	}
 
 	return nil
