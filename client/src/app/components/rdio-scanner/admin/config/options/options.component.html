@@ -17,7 +17,7 @@
       </p>
       <mat-form-field>
         <textarea type="text" matInput formControlName="afsSystems" placeholder="AFS systems"></textarea>
-        @if (form?.get('afsSystems')?.hasError('invalid')) {
+        @if (form.get('afsSystems')?.hasError('invalid')) {
           <mat-error>
             Comma separated list of system Ids
           </mat-error>
@@ -45,17 +45,17 @@
       </p>
       <mat-form-field>
         <input type="number" min="6" max="128" step="1" matInput formControlName="audioBitrate">
-        @if (form?.get('audioBitrate')?.hasError('required')) {
+        @if (form.get('audioBitrate')?.hasError('required')) {
           <mat-error>
             Audio bitrate is required
           </mat-error>
         }
-        @if (form?.get('audioBitrate')?.hasError('min')) {
+        @if (form.get('audioBitrate')?.hasError('min')) {
           <mat-error>
             Audio bitrate must be at least 6kbps
           </mat-error>
         }
-        @if (form?.get('audioBitrate')?.hasError('max')) {
+        @if (form.get('audioBitrate')?.hasError('max')) {
           <mat-error>
             Audio bitrate must be at most 128kbps
           </mat-error>
@@ -90,12 +90,12 @@
       </p>
       <mat-form-field>
         <input type="number" min="0" step="1" matInput formControlName="dimmerDelay">
-        @if (form?.get('dimmerDelay')?.hasError('required')) {
+        @if (form.get('dimmerDelay')?.hasError('required')) {
           <mat-error>
             Dimmer delay is required
           </mat-error>
         }
-        @if (form?.get('dimmerDelay')?.hasError('min')) {
+        @if (form.get('dimmerDelay')?.hasError('min')) {
           <mat-error>
             Dimmer delay is invalid
           </mat-error>
@@ -119,12 +119,12 @@
       </p>
       <mat-form-field>
         <input type="number" min="0" step="1" matInput formControlName="duplicateDetectionTimeFrame">
-        @if (form?.get('duplicateDetectionTimeFrame')?.hasError('required')) {
+        @if (form.get('duplicateDetectionTimeFrame')?.hasError('required')) {
           <mat-error>
             Duplicate call time frame is required
           </mat-error>
         }
-        @if (form?.get('duplicateDetectionTimeFrame')?.hasError('min')) {
+        @if (form.get('duplicateDetectionTimeFrame')?.hasError('min')) {
           <mat-error>
             Duplicate call time frame is invalid
           </mat-error>
@@ -150,12 +150,12 @@
       </p>
       <mat-form-field>
         <input type="number" min="0" step="1" matInput formControlName="maxClients">
-        @if (form?.get('maxClients')?.hasError('required')) {
+        @if (form.get('maxClients')?.hasError('required')) {
           <mat-error>
             Max clients is required
           </mat-error>
         }
-        @if (form?.get('maxClients')?.hasError('min')) {
+        @if (form.get('maxClients')?.hasError('min')) {
           <mat-error>
             Max clients is invalid
           </mat-error>
@@ -180,12 +180,12 @@
       </p>
       <mat-form-field>
         <input type="number" min="0" step="1" matInput formControlName="pruneCallDays">
-        @if (form?.get('pruneCallDays')?.hasError('required')) {
+        @if (form.get('pruneCallDays')?.hasError('required')) {
           <mat-error>
             Prune calls after is required
           </mat-error>
         }
-        @if (form?.get('pruneCallDays')?.hasError('min')) {
+        @if (form.get('pruneCallDays')?.hasError('min')) {
           <mat-error>
             Prune calls after is invalid
           </mat-error>
@@ -200,12 +200,12 @@
       </p>
       <mat-form-field>
         <input type="number" min="0" step="1" matInput formControlName="pruneLogDays">
-        @if (form?.get('pruneLogDays')?.hasError('required')) {
+        @if (form.get('pruneLogDays')?.hasError('required')) {
           <mat-error>
             Prune logs after is required
           </mat-error>
         }
-        @if (form?.get('pruneLogDays')?.hasError('min')) {
+        @if (form.get('pruneLogDays')?.hasError('min')) {
           <mat-error>
             Prune logs after is invalid
           </mat-error>

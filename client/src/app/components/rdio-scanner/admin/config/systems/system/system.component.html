@@ -60,7 +60,7 @@
     </p>
     <mat-form-field>
       <textarea type="text" matInput formControlName="blacklists" placeholder="Blacklists"></textarea>
-      @if (form?.get('blacklists')?.hasError('invalid')) {
+      @if (form.get('blacklists')?.hasError('invalid')) {
         <mat-error>
           Comma separated list of talkgroup Ids
         </mat-error>

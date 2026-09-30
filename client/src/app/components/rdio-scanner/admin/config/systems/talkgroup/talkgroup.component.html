@@ -7,17 +7,17 @@
       </p>
       <mat-form-field>
         <input type="number" min="1" step="1" matInput formControlName="id" placeholder="Id">
-        @if (form?.get('id')?.hasError('duplicate')) {
+        @if (form.get('id')?.hasError('duplicate')) {
           <mat-error>
             Id is already defined
           </mat-error>
         }
-        @if (form?.get('id')?.hasError('min')) {
+        @if (form.get('id')?.hasError('min')) {
           <mat-error>
             Id is invalid
           </mat-error>
         }
-        @if (form?.get('id')?.hasError('required')) {
+        @if (form.get('id')?.hasError('required')) {
           <mat-error>
             Id is required
           </mat-error>
@@ -31,7 +31,7 @@
       </p>
       <mat-form-field>
         <input type="text" matInput formControlName="label" placeholder="Label">
-        @if (form?.get('label')?.hasError('required')) {
+        @if (form.get('label')?.hasError('required')) {
           <mat-error>
             Label is required
           </mat-error>
@@ -45,7 +45,7 @@
       </p>
       <mat-form-field>
         <input type="text" matInput formControlName="name" placeholder="Name">
-        @if (form?.get('name')?.hasError('required')) {
+        @if (form.get('name')?.hasError('required')) {
           <mat-error>
             Name is required
           </mat-error>
@@ -65,7 +65,7 @@
             </mat-option>
           }
         </mat-select>
-        @if (form?.get('groupId')?.hasError('required')) {
+        @if (form.get('groupId')?.hasError('required')) {
           <mat-error>
             Group is required
           </mat-error>
@@ -85,7 +85,7 @@
             </mat-option>
           }
         </mat-select>
-        @if (form?.get('tagId')?.hasError('required')) {
+        @if (form.get('tagId')?.hasError('required')) {
           <mat-error>
             Tag is required
           </mat-error>
@@ -107,7 +107,7 @@
       </p>
       <mat-form-field>
         <input type="number" min="0" matInput formControlName="frequency" placeholder="Frequency">
-        @if (form?.get('frequency')?.errors) {
+        @if (form.get('frequency')?.errors) {
           <mat-error>
             Invalid frequency
           </mat-error>

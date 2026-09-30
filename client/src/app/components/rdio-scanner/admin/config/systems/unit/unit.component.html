@@ -7,17 +7,17 @@
       </p>
       <mat-form-field>
         <input type="number" min="0" step="1" matInput formControlName="id" placeholder="Id">
-        @if (form?.get('id')?.hasError('duplicate')) {
+        @if (form.get('id')?.hasError('duplicate')) {
           <mat-error>
             Id is already defined
           </mat-error>
         }
-        @if (form?.get('id')?.hasError('min')) {
+        @if (form.get('id')?.hasError('min')) {
           <mat-error>
             Id is invalid
           </mat-error>
         }
-        @if (form?.get('id')?.hasError('required')) {
+        @if (form.get('id')?.hasError('required')) {
           <mat-error>
             Id is required
           </mat-error>
@@ -31,7 +31,7 @@
       </p>
       <mat-form-field>
         <input type="text" matInput formControlName="label" placeholder="Label">
-        @if (form?.get('label')?.hasError('required')) {
+        @if (form.get('label')?.hasError('required')) {
           <mat-error>
             Label is required
           </mat-error>
