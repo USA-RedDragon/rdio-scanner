@@ -93,7 +93,6 @@ func TestTagsReadWrite(t *testing.T) {
 
 // Removing an existing tag and adding a new one in the same Write must do both.
 func TestTagsWriteRemoveAndAddTogether(t *testing.T) {
-	t.Skip("known bug: sync-list Write skips deletions when any item has a nil Id; fixed during ent migration")
 
 	forEachDatabase(t, func(t *testing.T, db *Database) {
 		tags := NewTags()

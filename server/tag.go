@@ -16,11 +16,11 @@
 package main
 
 import (
-	"database/sql"
-	"encoding/json"
+	"context"
 	"fmt"
-	"strings"
 	"sync"
+
+	enttag "github.com/USA-RedDragon/rdio-scanner/server/ent/tag"
 )
 
 type Tag struct {
@@ -163,147 +163,54 @@ func (tags *Tags) GetTagsMap(systemsMap *SystemsMap) TagsMap {
 }
 
 func (tags *Tags) Read(db *Database) error {
-	var (
-		err  error
-		id   sql.NullFloat64
-		rows *sql.Rows
-	)
-
 	tags.mutex.Lock()
 	defer tags.mutex.Unlock()
 
 	tags.List = []*Tag{}
 
-	formatError := func(err error) error {
-		return fmt.Errorf("tags read: %v", err)
-	}
-
-	q := "select `_id`, `label` from `rdioscannertags`"
-	if db.Config.DbType == DbTypePostgresql {
-		q = "select _id, label from rdioscannertags"
-	}
-	if rows, err = db.Sql.Query(q); err != nil {
-		return formatError(err)
-	}
-
-	for rows.Next() {
-		tag := &Tag{}
-
-		if err = rows.Scan(&id, &tag.Label); err != nil {
-			break
-		}
-
-		if id.Valid && id.Float64 > 0 {
-			tag.Id = uint(id.Float64)
-		}
-
-		tags.List = append(tags.List, tag)
-	}
-
-	rows.Close()
-
+	records, err := db.Ent.Tag.Query().All(context.Background())
 	if err != nil {
-		return formatError(err)
+		return fmt.Errorf("tags.read: %w", err)
+	}
+
+	for _, r := range records {
+		tags.List = append(tags.List, &Tag{Id: uint(r.ID), Label: r.Label})
 	}
 
 	return nil
 }
 
 func (tags *Tags) Write(db *Database) error {
-	var (
-		count  uint
-		err    error
-		rows   *sql.Rows
-		rowIds = []uint{}
-	)
-
 	tags.mutex.Lock()
 	defer tags.mutex.Unlock()
 
+	ctx := context.Background()
+
 	formatError := func(err error) error {
-		return fmt.Errorf("tags write %v", err)
+		return fmt.Errorf("tags.write: %w", err)
 	}
 
-	q := "select `_id` from `rdioscannertags`"
-	if db.Config.DbType == DbTypePostgresql {
-		q = "select _id from rdioscannertags"
+	keep := make([]int, 0, len(tags.List))
+	for _, tag := range tags.List {
+		if id, ok := rowID(tag.Id); ok {
+			keep = append(keep, id)
+		}
 	}
-	if rows, err = db.Sql.Query(q); err != nil {
+
+	if _, err := db.Ent.Tag.Delete().Where(enttag.IDNotIn(keep...)).Exec(ctx); err != nil {
 		return formatError(err)
-	}
-
-	for rows.Next() {
-		var rowId uint
-		if err = rows.Scan(&rowId); err != nil {
-			break
-		}
-		remove := true
-		for _, tag := range tags.List {
-			if tag.Id == nil || tag.Id == rowId {
-				remove = false
-				break
-			}
-		}
-		if remove {
-			rowIds = append(rowIds, rowId)
-		}
-	}
-
-	rows.Close()
-
-	if err != nil {
-		return formatError(err)
-	}
-
-	if len(rowIds) > 0 {
-		if b, err := json.Marshal(rowIds); err == nil {
-			s := string(b)
-			s = strings.ReplaceAll(s, "[", "(")
-			s = strings.ReplaceAll(s, "]", ")")
-			q := fmt.Sprintf("delete from `rdioscannertags` where `_id` in %v", s)
-			if db.Config.DbType == DbTypePostgresql {
-				q = fmt.Sprintf("delete from rdioscannertags where _id in %v", s)
-			}
-			if _, err = db.Sql.Exec(q); err != nil {
-				return formatError(err)
-			}
-		}
 	}
 
 	for _, tag := range tags.List {
-		q = "select count(*) from `rdioscannertags` where `_id` = ?"
-		if db.Config.DbType == DbTypePostgresql {
-			q = "select count(*) from rdioscannertags where _id = $1"
-		}
-		if err = db.Sql.QueryRow(q, tag.Id).Scan(&count); err != nil {
-			break
-		}
-
-		if count == 0 {
-			if db.Config.DbType == DbTypePostgresql {
-				q = "insert into rdioscannertags (label) values ($1)"
-				if _, err = db.Sql.Exec(q, tag.Label); err != nil {
-					break
-				}
-			} else {
-				q = "insert into `rdioscannertags` (`_id`, `label`) values (?, ?)"
-				if _, err = db.Sql.Exec(q, tag.Id, tag.Label); err != nil {
-					break
-				}
+		if id, ok := rowID(tag.Id); ok {
+			if err := db.Ent.Tag.UpdateOneID(id).SetLabel(tag.Label).Exec(ctx); err != nil {
+				return formatError(err)
 			}
 		} else {
-			q = "update `rdioscannertags` set `_id` = ?, `label` = ? where `_id` = ?"
-			if db.Config.DbType == DbTypePostgresql {
-				q = "update rdioscannertags set _id = $1, label = $2 where _id = $3"
-			}
-			if _, err = db.Sql.Exec(q, tag.Id, tag.Label, tag.Id); err != nil {
-				break
+			if err := db.Ent.Tag.Create().SetLabel(tag.Label).Exec(ctx); err != nil {
+				return formatError(err)
 			}
 		}
-	}
-
-	if err != nil {
-		return formatError(err)
 	}
 
 	return nil

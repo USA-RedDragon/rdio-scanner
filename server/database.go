@@ -110,6 +110,23 @@ func (db *Database) entDialect() string {
 	}
 }
 
+// rowID converts a collection item's "_id" (stored as any, typically uint from
+// the API) to the positive int ent uses for its primary key. ok is false when
+// the item is new (no id yet), which the sync-list writers treat as an insert.
+func rowID(v any) (int, bool) {
+	switch n := v.(type) {
+	case uint:
+		return int(n), n > 0
+	case int:
+		return n, n > 0
+	case int64:
+		return int(n), n > 0
+	case float64:
+		return int(n), n > 0
+	}
+	return 0, false
+}
+
 func (db *Database) ParseDateTime(f any) (time.Time, error) {
 	switch v := f.(type) {
 	case []uint8:

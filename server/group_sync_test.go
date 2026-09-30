@@ -20,7 +20,6 @@ import "testing"
 // Removing an existing group and adding a new one in the same Write must do
 // both. (Kept out of group_test.go, which is the reference example.)
 func TestGroupsWriteRemoveAndAddTogether(t *testing.T) {
-	t.Skip("known bug: sync-list Write skips deletions when any item has a nil Id; fixed during ent migration")
 
 	forEachDatabase(t, func(t *testing.T, db *Database) {
 		groups := NewGroups()

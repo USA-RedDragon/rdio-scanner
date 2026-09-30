@@ -16,11 +16,11 @@
 package main
 
 import (
-	"database/sql"
-	"encoding/json"
+	"context"
 	"fmt"
-	"strings"
 	"sync"
+
+	entgroup "github.com/USA-RedDragon/rdio-scanner/server/ent/group"
 )
 
 type Group struct {
@@ -163,152 +163,60 @@ func (groups *Groups) GetGroupsMap(systemsMap *SystemsMap) GroupsMap {
 }
 
 func (groups *Groups) Read(db *Database) error {
-	var (
-		err  error
-		id   sql.NullFloat64
-		rows *sql.Rows
-	)
-
 	groups.mutex.Lock()
 	defer groups.mutex.Unlock()
 
 	groups.List = []*Group{}
 
-	formatError := func(err error) error {
-		return fmt.Errorf("groups.read: %v", err)
+	records, err := db.Ent.Group.Query().All(context.Background())
+	if err != nil {
+		return fmt.Errorf("groups.read: %w", err)
 	}
 
-	q := "select `_id`, `label` from `rdioscannergroups`"
-	if db.Config.DbType == DbTypePostgresql {
-		q = "select _id, label from rdioscannergroups"
-	}
-	if rows, err = db.Sql.Query(q); err != nil {
-		return formatError(err)
-	}
-
-	for rows.Next() {
-		group := &Group{}
-
-		if err = rows.Scan(&id, &group.Label); err != nil {
-			break
-		}
-
-		if id.Valid && id.Float64 > 0 {
-			group.Id = uint(id.Float64)
-		}
-
-		if len(group.Label) == 0 {
+	for _, r := range records {
+		if len(r.Label) == 0 {
 			continue
 		}
-
-		groups.List = append(groups.List, group)
-	}
-
-	rows.Close()
-
-	if err != nil {
-		return formatError(err)
+		groups.List = append(groups.List, &Group{Id: uint(r.ID), Label: r.Label})
 	}
 
 	return nil
 }
 
 func (groups *Groups) Write(db *Database) error {
-	var (
-		count  uint
-		err    error
-		rows   *sql.Rows
-		rowIds = []uint{}
-	)
-
 	groups.mutex.Lock()
 	defer groups.mutex.Unlock()
 
+	ctx := context.Background()
+
 	formatError := func(err error) error {
-		return fmt.Errorf("groups.write %v", err)
+		return fmt.Errorf("groups.write: %w", err)
 	}
 
-	q := "select `_id` from `rdioscannergroups`"
-	if db.Config.DbType == DbTypePostgresql {
-		q = "select _id from rdioscannergroups"
+	// Ids to keep are those of existing items still in the list. Rows whose id
+	// is not kept are removed; items without an id are new and get inserted.
+	// (New items no longer suppress deletion, the old sync-list bug.)
+	keep := make([]int, 0, len(groups.List))
+	for _, group := range groups.List {
+		if id, ok := rowID(group.Id); ok {
+			keep = append(keep, id)
+		}
 	}
-	if rows, err = db.Sql.Query(q); err != nil {
+
+	if _, err := db.Ent.Group.Delete().Where(entgroup.IDNotIn(keep...)).Exec(ctx); err != nil {
 		return formatError(err)
-	}
-
-	for rows.Next() {
-		var rowId uint
-		if err = rows.Scan(&rowId); err != nil {
-			break
-		}
-		remove := true
-		for _, group := range groups.List {
-			if group.Id == nil || group.Id == rowId {
-				remove = false
-				break
-			}
-		}
-		if remove {
-			rowIds = append(rowIds, rowId)
-		}
-	}
-
-	rows.Close()
-
-	if err != nil {
-		return formatError(err)
-	}
-
-	if len(rowIds) > 0 {
-		if b, err := json.Marshal(rowIds); err == nil {
-			s := string(b)
-			s = strings.ReplaceAll(s, "[", "(")
-			s = strings.ReplaceAll(s, "]", ")")
-			q := fmt.Sprintf("delete from `rdioscannergroups` where `_id` in %v", s)
-			if db.Config.DbType == DbTypePostgresql {
-				q = fmt.Sprintf("delete from rdioscannergroups where _id in %v", s)
-			}
-			if _, err = db.Sql.Exec(q); err != nil {
-				return formatError(err)
-			}
-		}
 	}
 
 	for _, group := range groups.List {
-		q := "select count(*) from `rdioscannergroups` where `_id` = ?"
-		if db.Config.DbType == DbTypePostgresql {
-			q = "select count(*) from rdioscannergroups where _id = $1"
-		}
-		if err = db.Sql.QueryRow(q, group.Id).Scan(&count); err != nil {
-			break
-		}
-
-		if count == 0 {
-			if db.Config.DbType == DbTypePostgresql {
-				q = "insert into rdioscannergroups (label) values ($1)"
-				if _, err = db.Sql.Exec(q, group.Label); err != nil {
-					break
-				}
-			} else {
-				q := "insert into `rdioscannergroups` (`_id`, `label`) values (?, ?)"
-				if _, err = db.Sql.Exec(q, group.Id, group.Label); err != nil {
-					break
-				}
+		if id, ok := rowID(group.Id); ok {
+			if err := db.Ent.Group.UpdateOneID(id).SetLabel(group.Label).Exec(ctx); err != nil {
+				return formatError(err)
 			}
-
 		} else {
-			q := "update `rdioscannergroups` set `_id` = ?, `label` = ? where `_id` = ?"
-			if db.Config.DbType == DbTypePostgresql {
-				q = "update rdioscannergroups set _id = $1, label = $2 where _id = $3"
-			}
-			if _, err = db.Sql.Exec(q, group.Id, group.Label, group.Id); err != nil {
-				break
+			if err := db.Ent.Group.Create().SetLabel(group.Label).Exec(ctx); err != nil {
+				return formatError(err)
 			}
 		}
-	}
-
-	if err != nil {
-		return formatError(err)
 	}
 
 	return nil
