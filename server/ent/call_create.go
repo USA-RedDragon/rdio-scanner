@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/USA-RedDragon/rdio-scanner/server/ent/call"
@@ -18,6 +19,7 @@ type CallCreate struct {
 	config
 	mutation *CallMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetAudio sets the "audio" field.
@@ -207,6 +209,7 @@ func (_c *CallCreate) createSpec() (*Call, *sqlgraph.CreateSpec) {
 		_node = &Call{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(call.Table, sqlgraph.NewFieldSpec(call.FieldID, field.TypeInt))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = id
@@ -258,11 +261,532 @@ func (_c *CallCreate) createSpec() (*Call, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Call.Create().
+//		SetAudio(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.CallUpsert) {
+//			SetAudio(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *CallCreate) OnConflict(opts ...sql.ConflictOption) *CallUpsertOne {
+	_c.conflict = opts
+	return &CallUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Call.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *CallCreate) OnConflictColumns(columns ...string) *CallUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &CallUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// CallUpsertOne is the builder for "upsert"-ing
+	//  one Call node.
+	CallUpsertOne struct {
+		create *CallCreate
+	}
+
+	// CallUpsert is the "OnConflict" setter.
+	CallUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetAudio sets the "audio" field.
+func (u *CallUpsert) SetAudio(v []byte) *CallUpsert {
+	u.Set(call.FieldAudio, v)
+	return u
+}
+
+// UpdateAudio sets the "audio" field to the value that was provided on create.
+func (u *CallUpsert) UpdateAudio() *CallUpsert {
+	u.SetExcluded(call.FieldAudio)
+	return u
+}
+
+// SetAudioName sets the "audio_name" field.
+func (u *CallUpsert) SetAudioName(v string) *CallUpsert {
+	u.Set(call.FieldAudioName, v)
+	return u
+}
+
+// UpdateAudioName sets the "audio_name" field to the value that was provided on create.
+func (u *CallUpsert) UpdateAudioName() *CallUpsert {
+	u.SetExcluded(call.FieldAudioName)
+	return u
+}
+
+// ClearAudioName clears the value of the "audio_name" field.
+func (u *CallUpsert) ClearAudioName() *CallUpsert {
+	u.SetNull(call.FieldAudioName)
+	return u
+}
+
+// SetAudioType sets the "audio_type" field.
+func (u *CallUpsert) SetAudioType(v string) *CallUpsert {
+	u.Set(call.FieldAudioType, v)
+	return u
+}
+
+// UpdateAudioType sets the "audio_type" field to the value that was provided on create.
+func (u *CallUpsert) UpdateAudioType() *CallUpsert {
+	u.SetExcluded(call.FieldAudioType)
+	return u
+}
+
+// ClearAudioType clears the value of the "audio_type" field.
+func (u *CallUpsert) ClearAudioType() *CallUpsert {
+	u.SetNull(call.FieldAudioType)
+	return u
+}
+
+// SetDateTime sets the "date_time" field.
+func (u *CallUpsert) SetDateTime(v time.Time) *CallUpsert {
+	u.Set(call.FieldDateTime, v)
+	return u
+}
+
+// UpdateDateTime sets the "date_time" field to the value that was provided on create.
+func (u *CallUpsert) UpdateDateTime() *CallUpsert {
+	u.SetExcluded(call.FieldDateTime)
+	return u
+}
+
+// SetFrequencies sets the "frequencies" field.
+func (u *CallUpsert) SetFrequencies(v string) *CallUpsert {
+	u.Set(call.FieldFrequencies, v)
+	return u
+}
+
+// UpdateFrequencies sets the "frequencies" field to the value that was provided on create.
+func (u *CallUpsert) UpdateFrequencies() *CallUpsert {
+	u.SetExcluded(call.FieldFrequencies)
+	return u
+}
+
+// SetFrequency sets the "frequency" field.
+func (u *CallUpsert) SetFrequency(v int) *CallUpsert {
+	u.Set(call.FieldFrequency, v)
+	return u
+}
+
+// UpdateFrequency sets the "frequency" field to the value that was provided on create.
+func (u *CallUpsert) UpdateFrequency() *CallUpsert {
+	u.SetExcluded(call.FieldFrequency)
+	return u
+}
+
+// AddFrequency adds v to the "frequency" field.
+func (u *CallUpsert) AddFrequency(v int) *CallUpsert {
+	u.Add(call.FieldFrequency, v)
+	return u
+}
+
+// ClearFrequency clears the value of the "frequency" field.
+func (u *CallUpsert) ClearFrequency() *CallUpsert {
+	u.SetNull(call.FieldFrequency)
+	return u
+}
+
+// SetPatches sets the "patches" field.
+func (u *CallUpsert) SetPatches(v string) *CallUpsert {
+	u.Set(call.FieldPatches, v)
+	return u
+}
+
+// UpdatePatches sets the "patches" field to the value that was provided on create.
+func (u *CallUpsert) UpdatePatches() *CallUpsert {
+	u.SetExcluded(call.FieldPatches)
+	return u
+}
+
+// SetSource sets the "source" field.
+func (u *CallUpsert) SetSource(v int) *CallUpsert {
+	u.Set(call.FieldSource, v)
+	return u
+}
+
+// UpdateSource sets the "source" field to the value that was provided on create.
+func (u *CallUpsert) UpdateSource() *CallUpsert {
+	u.SetExcluded(call.FieldSource)
+	return u
+}
+
+// AddSource adds v to the "source" field.
+func (u *CallUpsert) AddSource(v int) *CallUpsert {
+	u.Add(call.FieldSource, v)
+	return u
+}
+
+// ClearSource clears the value of the "source" field.
+func (u *CallUpsert) ClearSource() *CallUpsert {
+	u.SetNull(call.FieldSource)
+	return u
+}
+
+// SetSources sets the "sources" field.
+func (u *CallUpsert) SetSources(v string) *CallUpsert {
+	u.Set(call.FieldSources, v)
+	return u
+}
+
+// UpdateSources sets the "sources" field to the value that was provided on create.
+func (u *CallUpsert) UpdateSources() *CallUpsert {
+	u.SetExcluded(call.FieldSources)
+	return u
+}
+
+// SetSystem sets the "system" field.
+func (u *CallUpsert) SetSystem(v int) *CallUpsert {
+	u.Set(call.FieldSystem, v)
+	return u
+}
+
+// UpdateSystem sets the "system" field to the value that was provided on create.
+func (u *CallUpsert) UpdateSystem() *CallUpsert {
+	u.SetExcluded(call.FieldSystem)
+	return u
+}
+
+// AddSystem adds v to the "system" field.
+func (u *CallUpsert) AddSystem(v int) *CallUpsert {
+	u.Add(call.FieldSystem, v)
+	return u
+}
+
+// SetTalkgroup sets the "talkgroup" field.
+func (u *CallUpsert) SetTalkgroup(v int) *CallUpsert {
+	u.Set(call.FieldTalkgroup, v)
+	return u
+}
+
+// UpdateTalkgroup sets the "talkgroup" field to the value that was provided on create.
+func (u *CallUpsert) UpdateTalkgroup() *CallUpsert {
+	u.SetExcluded(call.FieldTalkgroup)
+	return u
+}
+
+// AddTalkgroup adds v to the "talkgroup" field.
+func (u *CallUpsert) AddTalkgroup(v int) *CallUpsert {
+	u.Add(call.FieldTalkgroup, v)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Call.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(call.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *CallUpsertOne) UpdateNewValues() *CallUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(call.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Call.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *CallUpsertOne) Ignore() *CallUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *CallUpsertOne) DoNothing() *CallUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the CallCreate.OnConflict
+// documentation for more info.
+func (u *CallUpsertOne) Update(set func(*CallUpsert)) *CallUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&CallUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetAudio sets the "audio" field.
+func (u *CallUpsertOne) SetAudio(v []byte) *CallUpsertOne {
+	return u.Update(func(s *CallUpsert) {
+		s.SetAudio(v)
+	})
+}
+
+// UpdateAudio sets the "audio" field to the value that was provided on create.
+func (u *CallUpsertOne) UpdateAudio() *CallUpsertOne {
+	return u.Update(func(s *CallUpsert) {
+		s.UpdateAudio()
+	})
+}
+
+// SetAudioName sets the "audio_name" field.
+func (u *CallUpsertOne) SetAudioName(v string) *CallUpsertOne {
+	return u.Update(func(s *CallUpsert) {
+		s.SetAudioName(v)
+	})
+}
+
+// UpdateAudioName sets the "audio_name" field to the value that was provided on create.
+func (u *CallUpsertOne) UpdateAudioName() *CallUpsertOne {
+	return u.Update(func(s *CallUpsert) {
+		s.UpdateAudioName()
+	})
+}
+
+// ClearAudioName clears the value of the "audio_name" field.
+func (u *CallUpsertOne) ClearAudioName() *CallUpsertOne {
+	return u.Update(func(s *CallUpsert) {
+		s.ClearAudioName()
+	})
+}
+
+// SetAudioType sets the "audio_type" field.
+func (u *CallUpsertOne) SetAudioType(v string) *CallUpsertOne {
+	return u.Update(func(s *CallUpsert) {
+		s.SetAudioType(v)
+	})
+}
+
+// UpdateAudioType sets the "audio_type" field to the value that was provided on create.
+func (u *CallUpsertOne) UpdateAudioType() *CallUpsertOne {
+	return u.Update(func(s *CallUpsert) {
+		s.UpdateAudioType()
+	})
+}
+
+// ClearAudioType clears the value of the "audio_type" field.
+func (u *CallUpsertOne) ClearAudioType() *CallUpsertOne {
+	return u.Update(func(s *CallUpsert) {
+		s.ClearAudioType()
+	})
+}
+
+// SetDateTime sets the "date_time" field.
+func (u *CallUpsertOne) SetDateTime(v time.Time) *CallUpsertOne {
+	return u.Update(func(s *CallUpsert) {
+		s.SetDateTime(v)
+	})
+}
+
+// UpdateDateTime sets the "date_time" field to the value that was provided on create.
+func (u *CallUpsertOne) UpdateDateTime() *CallUpsertOne {
+	return u.Update(func(s *CallUpsert) {
+		s.UpdateDateTime()
+	})
+}
+
+// SetFrequencies sets the "frequencies" field.
+func (u *CallUpsertOne) SetFrequencies(v string) *CallUpsertOne {
+	return u.Update(func(s *CallUpsert) {
+		s.SetFrequencies(v)
+	})
+}
+
+// UpdateFrequencies sets the "frequencies" field to the value that was provided on create.
+func (u *CallUpsertOne) UpdateFrequencies() *CallUpsertOne {
+	return u.Update(func(s *CallUpsert) {
+		s.UpdateFrequencies()
+	})
+}
+
+// SetFrequency sets the "frequency" field.
+func (u *CallUpsertOne) SetFrequency(v int) *CallUpsertOne {
+	return u.Update(func(s *CallUpsert) {
+		s.SetFrequency(v)
+	})
+}
+
+// AddFrequency adds v to the "frequency" field.
+func (u *CallUpsertOne) AddFrequency(v int) *CallUpsertOne {
+	return u.Update(func(s *CallUpsert) {
+		s.AddFrequency(v)
+	})
+}
+
+// UpdateFrequency sets the "frequency" field to the value that was provided on create.
+func (u *CallUpsertOne) UpdateFrequency() *CallUpsertOne {
+	return u.Update(func(s *CallUpsert) {
+		s.UpdateFrequency()
+	})
+}
+
+// ClearFrequency clears the value of the "frequency" field.
+func (u *CallUpsertOne) ClearFrequency() *CallUpsertOne {
+	return u.Update(func(s *CallUpsert) {
+		s.ClearFrequency()
+	})
+}
+
+// SetPatches sets the "patches" field.
+func (u *CallUpsertOne) SetPatches(v string) *CallUpsertOne {
+	return u.Update(func(s *CallUpsert) {
+		s.SetPatches(v)
+	})
+}
+
+// UpdatePatches sets the "patches" field to the value that was provided on create.
+func (u *CallUpsertOne) UpdatePatches() *CallUpsertOne {
+	return u.Update(func(s *CallUpsert) {
+		s.UpdatePatches()
+	})
+}
+
+// SetSource sets the "source" field.
+func (u *CallUpsertOne) SetSource(v int) *CallUpsertOne {
+	return u.Update(func(s *CallUpsert) {
+		s.SetSource(v)
+	})
+}
+
+// AddSource adds v to the "source" field.
+func (u *CallUpsertOne) AddSource(v int) *CallUpsertOne {
+	return u.Update(func(s *CallUpsert) {
+		s.AddSource(v)
+	})
+}
+
+// UpdateSource sets the "source" field to the value that was provided on create.
+func (u *CallUpsertOne) UpdateSource() *CallUpsertOne {
+	return u.Update(func(s *CallUpsert) {
+		s.UpdateSource()
+	})
+}
+
+// ClearSource clears the value of the "source" field.
+func (u *CallUpsertOne) ClearSource() *CallUpsertOne {
+	return u.Update(func(s *CallUpsert) {
+		s.ClearSource()
+	})
+}
+
+// SetSources sets the "sources" field.
+func (u *CallUpsertOne) SetSources(v string) *CallUpsertOne {
+	return u.Update(func(s *CallUpsert) {
+		s.SetSources(v)
+	})
+}
+
+// UpdateSources sets the "sources" field to the value that was provided on create.
+func (u *CallUpsertOne) UpdateSources() *CallUpsertOne {
+	return u.Update(func(s *CallUpsert) {
+		s.UpdateSources()
+	})
+}
+
+// SetSystem sets the "system" field.
+func (u *CallUpsertOne) SetSystem(v int) *CallUpsertOne {
+	return u.Update(func(s *CallUpsert) {
+		s.SetSystem(v)
+	})
+}
+
+// AddSystem adds v to the "system" field.
+func (u *CallUpsertOne) AddSystem(v int) *CallUpsertOne {
+	return u.Update(func(s *CallUpsert) {
+		s.AddSystem(v)
+	})
+}
+
+// UpdateSystem sets the "system" field to the value that was provided on create.
+func (u *CallUpsertOne) UpdateSystem() *CallUpsertOne {
+	return u.Update(func(s *CallUpsert) {
+		s.UpdateSystem()
+	})
+}
+
+// SetTalkgroup sets the "talkgroup" field.
+func (u *CallUpsertOne) SetTalkgroup(v int) *CallUpsertOne {
+	return u.Update(func(s *CallUpsert) {
+		s.SetTalkgroup(v)
+	})
+}
+
+// AddTalkgroup adds v to the "talkgroup" field.
+func (u *CallUpsertOne) AddTalkgroup(v int) *CallUpsertOne {
+	return u.Update(func(s *CallUpsert) {
+		s.AddTalkgroup(v)
+	})
+}
+
+// UpdateTalkgroup sets the "talkgroup" field to the value that was provided on create.
+func (u *CallUpsertOne) UpdateTalkgroup() *CallUpsertOne {
+	return u.Update(func(s *CallUpsert) {
+		s.UpdateTalkgroup()
+	})
+}
+
+// Exec executes the query.
+func (u *CallUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for CallCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *CallUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *CallUpsertOne) ID(ctx context.Context) (id int, err error) {
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *CallUpsertOne) IDX(ctx context.Context) int {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // CallCreateBulk is the builder for creating many Call entities in bulk.
 type CallCreateBulk struct {
 	config
 	err      error
 	builders []*CallCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Call entities in the database.
@@ -291,6 +815,7 @@ func (_c *CallCreateBulk) Save(ctx context.Context) ([]*Call, error) {
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -341,6 +866,330 @@ func (_c *CallCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *CallCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Call.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.CallUpsert) {
+//			SetAudio(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *CallCreateBulk) OnConflict(opts ...sql.ConflictOption) *CallUpsertBulk {
+	_c.conflict = opts
+	return &CallUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Call.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *CallCreateBulk) OnConflictColumns(columns ...string) *CallUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &CallUpsertBulk{
+		create: _c,
+	}
+}
+
+// CallUpsertBulk is the builder for "upsert"-ing
+// a bulk of Call nodes.
+type CallUpsertBulk struct {
+	create *CallCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Call.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(call.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *CallUpsertBulk) UpdateNewValues() *CallUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(call.FieldID)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Call.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *CallUpsertBulk) Ignore() *CallUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *CallUpsertBulk) DoNothing() *CallUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the CallCreateBulk.OnConflict
+// documentation for more info.
+func (u *CallUpsertBulk) Update(set func(*CallUpsert)) *CallUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&CallUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetAudio sets the "audio" field.
+func (u *CallUpsertBulk) SetAudio(v []byte) *CallUpsertBulk {
+	return u.Update(func(s *CallUpsert) {
+		s.SetAudio(v)
+	})
+}
+
+// UpdateAudio sets the "audio" field to the value that was provided on create.
+func (u *CallUpsertBulk) UpdateAudio() *CallUpsertBulk {
+	return u.Update(func(s *CallUpsert) {
+		s.UpdateAudio()
+	})
+}
+
+// SetAudioName sets the "audio_name" field.
+func (u *CallUpsertBulk) SetAudioName(v string) *CallUpsertBulk {
+	return u.Update(func(s *CallUpsert) {
+		s.SetAudioName(v)
+	})
+}
+
+// UpdateAudioName sets the "audio_name" field to the value that was provided on create.
+func (u *CallUpsertBulk) UpdateAudioName() *CallUpsertBulk {
+	return u.Update(func(s *CallUpsert) {
+		s.UpdateAudioName()
+	})
+}
+
+// ClearAudioName clears the value of the "audio_name" field.
+func (u *CallUpsertBulk) ClearAudioName() *CallUpsertBulk {
+	return u.Update(func(s *CallUpsert) {
+		s.ClearAudioName()
+	})
+}
+
+// SetAudioType sets the "audio_type" field.
+func (u *CallUpsertBulk) SetAudioType(v string) *CallUpsertBulk {
+	return u.Update(func(s *CallUpsert) {
+		s.SetAudioType(v)
+	})
+}
+
+// UpdateAudioType sets the "audio_type" field to the value that was provided on create.
+func (u *CallUpsertBulk) UpdateAudioType() *CallUpsertBulk {
+	return u.Update(func(s *CallUpsert) {
+		s.UpdateAudioType()
+	})
+}
+
+// ClearAudioType clears the value of the "audio_type" field.
+func (u *CallUpsertBulk) ClearAudioType() *CallUpsertBulk {
+	return u.Update(func(s *CallUpsert) {
+		s.ClearAudioType()
+	})
+}
+
+// SetDateTime sets the "date_time" field.
+func (u *CallUpsertBulk) SetDateTime(v time.Time) *CallUpsertBulk {
+	return u.Update(func(s *CallUpsert) {
+		s.SetDateTime(v)
+	})
+}
+
+// UpdateDateTime sets the "date_time" field to the value that was provided on create.
+func (u *CallUpsertBulk) UpdateDateTime() *CallUpsertBulk {
+	return u.Update(func(s *CallUpsert) {
+		s.UpdateDateTime()
+	})
+}
+
+// SetFrequencies sets the "frequencies" field.
+func (u *CallUpsertBulk) SetFrequencies(v string) *CallUpsertBulk {
+	return u.Update(func(s *CallUpsert) {
+		s.SetFrequencies(v)
+	})
+}
+
+// UpdateFrequencies sets the "frequencies" field to the value that was provided on create.
+func (u *CallUpsertBulk) UpdateFrequencies() *CallUpsertBulk {
+	return u.Update(func(s *CallUpsert) {
+		s.UpdateFrequencies()
+	})
+}
+
+// SetFrequency sets the "frequency" field.
+func (u *CallUpsertBulk) SetFrequency(v int) *CallUpsertBulk {
+	return u.Update(func(s *CallUpsert) {
+		s.SetFrequency(v)
+	})
+}
+
+// AddFrequency adds v to the "frequency" field.
+func (u *CallUpsertBulk) AddFrequency(v int) *CallUpsertBulk {
+	return u.Update(func(s *CallUpsert) {
+		s.AddFrequency(v)
+	})
+}
+
+// UpdateFrequency sets the "frequency" field to the value that was provided on create.
+func (u *CallUpsertBulk) UpdateFrequency() *CallUpsertBulk {
+	return u.Update(func(s *CallUpsert) {
+		s.UpdateFrequency()
+	})
+}
+
+// ClearFrequency clears the value of the "frequency" field.
+func (u *CallUpsertBulk) ClearFrequency() *CallUpsertBulk {
+	return u.Update(func(s *CallUpsert) {
+		s.ClearFrequency()
+	})
+}
+
+// SetPatches sets the "patches" field.
+func (u *CallUpsertBulk) SetPatches(v string) *CallUpsertBulk {
+	return u.Update(func(s *CallUpsert) {
+		s.SetPatches(v)
+	})
+}
+
+// UpdatePatches sets the "patches" field to the value that was provided on create.
+func (u *CallUpsertBulk) UpdatePatches() *CallUpsertBulk {
+	return u.Update(func(s *CallUpsert) {
+		s.UpdatePatches()
+	})
+}
+
+// SetSource sets the "source" field.
+func (u *CallUpsertBulk) SetSource(v int) *CallUpsertBulk {
+	return u.Update(func(s *CallUpsert) {
+		s.SetSource(v)
+	})
+}
+
+// AddSource adds v to the "source" field.
+func (u *CallUpsertBulk) AddSource(v int) *CallUpsertBulk {
+	return u.Update(func(s *CallUpsert) {
+		s.AddSource(v)
+	})
+}
+
+// UpdateSource sets the "source" field to the value that was provided on create.
+func (u *CallUpsertBulk) UpdateSource() *CallUpsertBulk {
+	return u.Update(func(s *CallUpsert) {
+		s.UpdateSource()
+	})
+}
+
+// ClearSource clears the value of the "source" field.
+func (u *CallUpsertBulk) ClearSource() *CallUpsertBulk {
+	return u.Update(func(s *CallUpsert) {
+		s.ClearSource()
+	})
+}
+
+// SetSources sets the "sources" field.
+func (u *CallUpsertBulk) SetSources(v string) *CallUpsertBulk {
+	return u.Update(func(s *CallUpsert) {
+		s.SetSources(v)
+	})
+}
+
+// UpdateSources sets the "sources" field to the value that was provided on create.
+func (u *CallUpsertBulk) UpdateSources() *CallUpsertBulk {
+	return u.Update(func(s *CallUpsert) {
+		s.UpdateSources()
+	})
+}
+
+// SetSystem sets the "system" field.
+func (u *CallUpsertBulk) SetSystem(v int) *CallUpsertBulk {
+	return u.Update(func(s *CallUpsert) {
+		s.SetSystem(v)
+	})
+}
+
+// AddSystem adds v to the "system" field.
+func (u *CallUpsertBulk) AddSystem(v int) *CallUpsertBulk {
+	return u.Update(func(s *CallUpsert) {
+		s.AddSystem(v)
+	})
+}
+
+// UpdateSystem sets the "system" field to the value that was provided on create.
+func (u *CallUpsertBulk) UpdateSystem() *CallUpsertBulk {
+	return u.Update(func(s *CallUpsert) {
+		s.UpdateSystem()
+	})
+}
+
+// SetTalkgroup sets the "talkgroup" field.
+func (u *CallUpsertBulk) SetTalkgroup(v int) *CallUpsertBulk {
+	return u.Update(func(s *CallUpsert) {
+		s.SetTalkgroup(v)
+	})
+}
+
+// AddTalkgroup adds v to the "talkgroup" field.
+func (u *CallUpsertBulk) AddTalkgroup(v int) *CallUpsertBulk {
+	return u.Update(func(s *CallUpsert) {
+		s.AddTalkgroup(v)
+	})
+}
+
+// UpdateTalkgroup sets the "talkgroup" field to the value that was provided on create.
+func (u *CallUpsertBulk) UpdateTalkgroup() *CallUpsertBulk {
+	return u.Update(func(s *CallUpsert) {
+		s.UpdateTalkgroup()
+	})
+}
+
+// Exec executes the query.
+func (u *CallUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the CallCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for CallCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *CallUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

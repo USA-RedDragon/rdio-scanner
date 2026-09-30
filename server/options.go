@@ -16,13 +16,15 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
-	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"sync"
 
+	"github.com/USA-RedDragon/rdio-scanner/server/ent"
+	"github.com/USA-RedDragon/rdio-scanner/server/ent/setting"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -238,38 +240,32 @@ func (options *Options) Read(db *Database) error {
 	options.SortTalkgroups = defaults.options.sortTalkgroups
 	options.TagsToggle = defaults.options.tagsToggle
 
-	q := "select `val` from `rdioscannerconfigs` where `key` = 'adminPassword'"
-	if db.Config.DbType == DbTypePostgresql {
-		q = "select val from rdioscannerconfigs where key = 'adminPassword'"
-	}
-	err = db.Sql.QueryRow(q).Scan(&s)
-	if err == nil {
-		if err = json.Unmarshal([]byte(s), &s); err == nil {
-			options.adminPassword = s
+	ctx := context.Background()
+
+	if s, err = db.readSetting(ctx, "adminPassword"); err != nil {
+		return fmt.Errorf("options.read: %w", err)
+	} else if s != "" {
+		var v string
+		if json.Unmarshal([]byte(s), &v) == nil {
+			options.adminPassword = v
 		}
 	}
 
-	q = "select `val` from `rdioscannerconfigs` where `key` = 'adminPasswordNeedChange'"
-	if db.Config.DbType == DbTypePostgresql {
-		q = "select val from rdioscannerconfigs where key = 'adminPasswordNeedChange'"
-	}
-	err = db.Sql.QueryRow(q).Scan(&s)
-	if err == nil {
+	if s, err = db.readSetting(ctx, "adminPasswordNeedChange"); err != nil {
+		return fmt.Errorf("options.read: %w", err)
+	} else if s != "" {
 		var b bool
-		if err = json.Unmarshal([]byte(s), &b); err == nil {
+		if json.Unmarshal([]byte(s), &b) == nil {
 			options.adminPasswordNeedChange = b
 		}
 	}
 
-	q = "select `val` from `rdioscannerconfigs` where `key` = 'options'"
-	if db.Config.DbType == DbTypePostgresql {
-		q = "select val from rdioscannerconfigs where key = 'options'"
-	}
-	err = db.Sql.QueryRow(q).Scan(&s)
-	if err == nil {
+	if s, err = db.readSetting(ctx, "options"); err != nil {
+		return fmt.Errorf("options.read: %w", err)
+	} else if s != "" {
 		var m map[string]any
 
-		if err = json.Unmarshal([]byte(s), &m); err == nil {
+		if json.Unmarshal([]byte(s), &m) == nil {
 			switch v := m["afsSystems"].(type) {
 			case string:
 				options.AfsSystems = v
@@ -364,44 +360,26 @@ func (options *Options) Read(db *Database) error {
 		}
 	}
 
-	q = "select `val` from `rdioscannerconfigs` where `key` = 'secret'"
-	if db.Config.DbType == DbTypePostgresql {
-		q = "select val from rdioscannerconfigs where key = 'secret'"
-	}
-	err = db.Sql.QueryRow(q).Scan(&s)
-	if err == nil {
-		if err = json.Unmarshal([]byte(s), &s); err == nil {
-			options.secret = s
+	if s, err = db.readSetting(ctx, "secret"); err != nil {
+		return fmt.Errorf("options.read: %w", err)
+	} else if s != "" {
+		var v string
+		if json.Unmarshal([]byte(s), &v) == nil {
+			options.secret = v
 		}
 	}
 
-	// Older versions never persisted the JWT signing secret, so it stayed
-	// empty and admin tokens could be forged (HS256 with an empty key).
-	// Generate one and store it once.
+	// The JWT signing secret was never persisted by older versions, leaving
+	// it empty so admin tokens could be forged. Generate and store one once.
 	if options.secret == "" {
 		buf := make([]byte, 32)
 		if _, err = rand.Read(buf); err != nil {
-			return fmt.Errorf("options.read: %v", err)
+			return fmt.Errorf("options.read: %w", err)
 		}
 		options.secret = hex.EncodeToString(buf)
-
 		if b, err := json.Marshal(options.secret); err == nil {
-			// Update first (a row may exist with an empty value), then insert
-			// if there was none, so the unique key constraint isn't hit.
-			uq := "update `rdioScannerConfigs` set `val` = ? where `key` = 'secret'"
-			iq := "insert into `rdioScannerConfigs` (`key`, `val`) values (?, ?)"
-			if db.Config.DbType == DbTypePostgresql {
-				uq = "update rdioScannerConfigs set val = $1 where key = 'secret'"
-				iq = "insert into rdioScannerConfigs (key, val) values ($1, $2)"
-			}
-			res, uerr := db.Sql.Exec(uq, string(b))
-			if uerr != nil {
-				return fmt.Errorf("options.read: persisting secret: %v", uerr)
-			}
-			if n, _ := res.RowsAffected(); n == 0 {
-				if _, err = db.Sql.Exec(iq, "secret", string(b)); err != nil {
-					return fmt.Errorf("options.read: persisting secret: %v", err)
-				}
+			if err = db.writeSetting(ctx, "secret", string(b)); err != nil {
+				return fmt.Errorf("options.read: %w", err)
 			}
 		}
 	}
@@ -409,62 +387,52 @@ func (options *Options) Read(db *Database) error {
 	return nil
 }
 
-func (options *Options) Write(db *Database) error {
-	var (
-		b   []byte
-		err error
-		i   int64
-		res sql.Result
-	)
+// readSetting returns the stored JSON value for a config key, or "" if absent.
+func (db *Database) readSetting(ctx context.Context, key string) (string, error) {
+	s, err := db.Ent.Setting.Query().Where(setting.Key(key)).Only(ctx)
+	if ent.IsNotFound(err) {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	return s.Val, nil
+}
 
+// writeSetting upserts a config key to val.
+func (db *Database) writeSetting(ctx context.Context, key, val string) error {
+	return db.Ent.Setting.Create().SetKey(key).SetVal(val).
+		OnConflictColumns("key").UpdateVal().Exec(ctx)
+}
+
+func (options *Options) Write(db *Database) error {
 	options.mutex.Lock()
 	defer options.mutex.Unlock()
+
+	ctx := context.Background()
 
 	formatError := func(err error) error {
 		return fmt.Errorf("options.write: %v", err)
 	}
 
-	if b, err = json.Marshal(options.adminPassword); err != nil {
-		return formatError(err)
-	}
-
-	q := "update `rdioscannerconfigs` set `val` = ? where `key` = 'adminPassword'"
-	if db.Config.DbType == DbTypePostgresql {
-		q = "update rdioscannerconfigs set val = $1 where key = 'adminPassword'"
-	}
-	if res, err = db.Sql.Exec(q, string(b)); err != nil {
-		return formatError(err)
-	}
-
-	if i, err = res.RowsAffected(); err == nil && i == 0 {
-		q = "insert into `rdioscannerconfigs` (`key`, `val`) values (?, ?)"
-		if db.Config.DbType == DbTypePostgresql {
-			q = "insert into rdioscannerconfigs (key, val) values ($1, $2)"
+	write := func(key string, value any) error {
+		b, err := json.Marshal(value)
+		if err != nil {
+			return formatError(err)
 		}
-		db.Sql.Exec(q, "adminPassword", string(b))
-	}
-
-	if b, err = json.Marshal(options.adminPasswordNeedChange); err != nil {
-		return formatError(err)
-	}
-
-	q = "update `rdioscannerconfigs` set `val` = ? where `key` = 'adminPasswordNeedChange'"
-	if db.Config.DbType == DbTypePostgresql {
-		q = "update rdioscannerconfigs set val = $1 where key = 'adminPasswordNeedChange'"
-	}
-	if res, err = db.Sql.Exec(q, string(b)); err != nil {
-		return formatError(err)
-	}
-
-	if i, err = res.RowsAffected(); err == nil && i == 0 {
-		q = "insert into `rdioscannerconfigs` (`key`, `val`) values (?, ?)"
-		if db.Config.DbType == DbTypePostgresql {
-			q = "insert into rdioscannerconfigs (key, val) values ($1, $2)"
+		if err = db.writeSetting(ctx, key, string(b)); err != nil {
+			return formatError(err)
 		}
-		db.Sql.Exec(q, "adminPasswordNeedChange", string(b))
+		return nil
 	}
 
-	if b, err = json.Marshal(map[string]any{
+	if err := write("adminPassword", options.adminPassword); err != nil {
+		return err
+	}
+	if err := write("adminPasswordNeedChange", options.adminPasswordNeedChange); err != nil {
+		return err
+	}
+	return write("options", map[string]any{
 		"afsSystems":                  options.AfsSystems,
 		"audioConversion":             options.AudioConversion,
 		"audioBitrate":                options.AudioBitrate,
@@ -483,25 +451,5 @@ func (options *Options) Write(db *Database) error {
 		"sortTalkgroups":              options.SortTalkgroups,
 		"tagsToggle":                  options.TagsToggle,
 		"time12hFormat":               options.Time12hFormat,
-	}); err != nil {
-		return formatError(err)
-	}
-
-	q = "update `rdioscannerconfigs` set `val` = ? where `key` = 'options'"
-	if db.Config.DbType == DbTypePostgresql {
-		q = "update rdioscannerconfigs set val = $1 where key = 'options'"
-	}
-	if res, err = db.Sql.Exec(q, string(b)); err != nil {
-		return formatError(err)
-	}
-
-	if i, err = res.RowsAffected(); err == nil && i == 0 {
-		q := "insert into `rdioscannerconfigs` (`key`, `val`) values (?, ?)"
-		if db.Config.DbType == DbTypePostgresql {
-			q = "insert into rdioscannerconfigs (key, val) values ($1, $2)"
-		}
-		db.Sql.Exec(q, "options", string(b))
-	}
-
-	return nil
+	})
 }

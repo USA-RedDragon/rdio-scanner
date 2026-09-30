@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/USA-RedDragon/rdio-scanner/server/ent/apikey"
@@ -17,6 +18,7 @@ type ApikeyCreate struct {
 	config
 	mutation *ApikeyMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetDisabled sets the "disabled" field.
@@ -156,6 +158,7 @@ func (_c *ApikeyCreate) createSpec() (*Apikey, *sqlgraph.CreateSpec) {
 		_node = &Apikey{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(apikey.Table, sqlgraph.NewFieldSpec(apikey.FieldID, field.TypeInt))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = id
@@ -183,11 +186,324 @@ func (_c *ApikeyCreate) createSpec() (*Apikey, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Apikey.Create().
+//		SetDisabled(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ApikeyUpsert) {
+//			SetDisabled(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *ApikeyCreate) OnConflict(opts ...sql.ConflictOption) *ApikeyUpsertOne {
+	_c.conflict = opts
+	return &ApikeyUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Apikey.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *ApikeyCreate) OnConflictColumns(columns ...string) *ApikeyUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &ApikeyUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// ApikeyUpsertOne is the builder for "upsert"-ing
+	//  one Apikey node.
+	ApikeyUpsertOne struct {
+		create *ApikeyCreate
+	}
+
+	// ApikeyUpsert is the "OnConflict" setter.
+	ApikeyUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetDisabled sets the "disabled" field.
+func (u *ApikeyUpsert) SetDisabled(v bool) *ApikeyUpsert {
+	u.Set(apikey.FieldDisabled, v)
+	return u
+}
+
+// UpdateDisabled sets the "disabled" field to the value that was provided on create.
+func (u *ApikeyUpsert) UpdateDisabled() *ApikeyUpsert {
+	u.SetExcluded(apikey.FieldDisabled)
+	return u
+}
+
+// ClearDisabled clears the value of the "disabled" field.
+func (u *ApikeyUpsert) ClearDisabled() *ApikeyUpsert {
+	u.SetNull(apikey.FieldDisabled)
+	return u
+}
+
+// SetIdent sets the "ident" field.
+func (u *ApikeyUpsert) SetIdent(v string) *ApikeyUpsert {
+	u.Set(apikey.FieldIdent, v)
+	return u
+}
+
+// UpdateIdent sets the "ident" field to the value that was provided on create.
+func (u *ApikeyUpsert) UpdateIdent() *ApikeyUpsert {
+	u.SetExcluded(apikey.FieldIdent)
+	return u
+}
+
+// ClearIdent clears the value of the "ident" field.
+func (u *ApikeyUpsert) ClearIdent() *ApikeyUpsert {
+	u.SetNull(apikey.FieldIdent)
+	return u
+}
+
+// SetKey sets the "key" field.
+func (u *ApikeyUpsert) SetKey(v string) *ApikeyUpsert {
+	u.Set(apikey.FieldKey, v)
+	return u
+}
+
+// UpdateKey sets the "key" field to the value that was provided on create.
+func (u *ApikeyUpsert) UpdateKey() *ApikeyUpsert {
+	u.SetExcluded(apikey.FieldKey)
+	return u
+}
+
+// SetOrder sets the "order" field.
+func (u *ApikeyUpsert) SetOrder(v int) *ApikeyUpsert {
+	u.Set(apikey.FieldOrder, v)
+	return u
+}
+
+// UpdateOrder sets the "order" field to the value that was provided on create.
+func (u *ApikeyUpsert) UpdateOrder() *ApikeyUpsert {
+	u.SetExcluded(apikey.FieldOrder)
+	return u
+}
+
+// AddOrder adds v to the "order" field.
+func (u *ApikeyUpsert) AddOrder(v int) *ApikeyUpsert {
+	u.Add(apikey.FieldOrder, v)
+	return u
+}
+
+// ClearOrder clears the value of the "order" field.
+func (u *ApikeyUpsert) ClearOrder() *ApikeyUpsert {
+	u.SetNull(apikey.FieldOrder)
+	return u
+}
+
+// SetSystems sets the "systems" field.
+func (u *ApikeyUpsert) SetSystems(v string) *ApikeyUpsert {
+	u.Set(apikey.FieldSystems, v)
+	return u
+}
+
+// UpdateSystems sets the "systems" field to the value that was provided on create.
+func (u *ApikeyUpsert) UpdateSystems() *ApikeyUpsert {
+	u.SetExcluded(apikey.FieldSystems)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Apikey.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(apikey.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ApikeyUpsertOne) UpdateNewValues() *ApikeyUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(apikey.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Apikey.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *ApikeyUpsertOne) Ignore() *ApikeyUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ApikeyUpsertOne) DoNothing() *ApikeyUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ApikeyCreate.OnConflict
+// documentation for more info.
+func (u *ApikeyUpsertOne) Update(set func(*ApikeyUpsert)) *ApikeyUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ApikeyUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetDisabled sets the "disabled" field.
+func (u *ApikeyUpsertOne) SetDisabled(v bool) *ApikeyUpsertOne {
+	return u.Update(func(s *ApikeyUpsert) {
+		s.SetDisabled(v)
+	})
+}
+
+// UpdateDisabled sets the "disabled" field to the value that was provided on create.
+func (u *ApikeyUpsertOne) UpdateDisabled() *ApikeyUpsertOne {
+	return u.Update(func(s *ApikeyUpsert) {
+		s.UpdateDisabled()
+	})
+}
+
+// ClearDisabled clears the value of the "disabled" field.
+func (u *ApikeyUpsertOne) ClearDisabled() *ApikeyUpsertOne {
+	return u.Update(func(s *ApikeyUpsert) {
+		s.ClearDisabled()
+	})
+}
+
+// SetIdent sets the "ident" field.
+func (u *ApikeyUpsertOne) SetIdent(v string) *ApikeyUpsertOne {
+	return u.Update(func(s *ApikeyUpsert) {
+		s.SetIdent(v)
+	})
+}
+
+// UpdateIdent sets the "ident" field to the value that was provided on create.
+func (u *ApikeyUpsertOne) UpdateIdent() *ApikeyUpsertOne {
+	return u.Update(func(s *ApikeyUpsert) {
+		s.UpdateIdent()
+	})
+}
+
+// ClearIdent clears the value of the "ident" field.
+func (u *ApikeyUpsertOne) ClearIdent() *ApikeyUpsertOne {
+	return u.Update(func(s *ApikeyUpsert) {
+		s.ClearIdent()
+	})
+}
+
+// SetKey sets the "key" field.
+func (u *ApikeyUpsertOne) SetKey(v string) *ApikeyUpsertOne {
+	return u.Update(func(s *ApikeyUpsert) {
+		s.SetKey(v)
+	})
+}
+
+// UpdateKey sets the "key" field to the value that was provided on create.
+func (u *ApikeyUpsertOne) UpdateKey() *ApikeyUpsertOne {
+	return u.Update(func(s *ApikeyUpsert) {
+		s.UpdateKey()
+	})
+}
+
+// SetOrder sets the "order" field.
+func (u *ApikeyUpsertOne) SetOrder(v int) *ApikeyUpsertOne {
+	return u.Update(func(s *ApikeyUpsert) {
+		s.SetOrder(v)
+	})
+}
+
+// AddOrder adds v to the "order" field.
+func (u *ApikeyUpsertOne) AddOrder(v int) *ApikeyUpsertOne {
+	return u.Update(func(s *ApikeyUpsert) {
+		s.AddOrder(v)
+	})
+}
+
+// UpdateOrder sets the "order" field to the value that was provided on create.
+func (u *ApikeyUpsertOne) UpdateOrder() *ApikeyUpsertOne {
+	return u.Update(func(s *ApikeyUpsert) {
+		s.UpdateOrder()
+	})
+}
+
+// ClearOrder clears the value of the "order" field.
+func (u *ApikeyUpsertOne) ClearOrder() *ApikeyUpsertOne {
+	return u.Update(func(s *ApikeyUpsert) {
+		s.ClearOrder()
+	})
+}
+
+// SetSystems sets the "systems" field.
+func (u *ApikeyUpsertOne) SetSystems(v string) *ApikeyUpsertOne {
+	return u.Update(func(s *ApikeyUpsert) {
+		s.SetSystems(v)
+	})
+}
+
+// UpdateSystems sets the "systems" field to the value that was provided on create.
+func (u *ApikeyUpsertOne) UpdateSystems() *ApikeyUpsertOne {
+	return u.Update(func(s *ApikeyUpsert) {
+		s.UpdateSystems()
+	})
+}
+
+// Exec executes the query.
+func (u *ApikeyUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for ApikeyCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ApikeyUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *ApikeyUpsertOne) ID(ctx context.Context) (id int, err error) {
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *ApikeyUpsertOne) IDX(ctx context.Context) int {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // ApikeyCreateBulk is the builder for creating many Apikey entities in bulk.
 type ApikeyCreateBulk struct {
 	config
 	err      error
 	builders []*ApikeyCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Apikey entities in the database.
@@ -217,6 +533,7 @@ func (_c *ApikeyCreateBulk) Save(ctx context.Context) ([]*Apikey, error) {
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -267,6 +584,218 @@ func (_c *ApikeyCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *ApikeyCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Apikey.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ApikeyUpsert) {
+//			SetDisabled(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *ApikeyCreateBulk) OnConflict(opts ...sql.ConflictOption) *ApikeyUpsertBulk {
+	_c.conflict = opts
+	return &ApikeyUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Apikey.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *ApikeyCreateBulk) OnConflictColumns(columns ...string) *ApikeyUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &ApikeyUpsertBulk{
+		create: _c,
+	}
+}
+
+// ApikeyUpsertBulk is the builder for "upsert"-ing
+// a bulk of Apikey nodes.
+type ApikeyUpsertBulk struct {
+	create *ApikeyCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Apikey.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(apikey.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ApikeyUpsertBulk) UpdateNewValues() *ApikeyUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(apikey.FieldID)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Apikey.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *ApikeyUpsertBulk) Ignore() *ApikeyUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ApikeyUpsertBulk) DoNothing() *ApikeyUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ApikeyCreateBulk.OnConflict
+// documentation for more info.
+func (u *ApikeyUpsertBulk) Update(set func(*ApikeyUpsert)) *ApikeyUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ApikeyUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetDisabled sets the "disabled" field.
+func (u *ApikeyUpsertBulk) SetDisabled(v bool) *ApikeyUpsertBulk {
+	return u.Update(func(s *ApikeyUpsert) {
+		s.SetDisabled(v)
+	})
+}
+
+// UpdateDisabled sets the "disabled" field to the value that was provided on create.
+func (u *ApikeyUpsertBulk) UpdateDisabled() *ApikeyUpsertBulk {
+	return u.Update(func(s *ApikeyUpsert) {
+		s.UpdateDisabled()
+	})
+}
+
+// ClearDisabled clears the value of the "disabled" field.
+func (u *ApikeyUpsertBulk) ClearDisabled() *ApikeyUpsertBulk {
+	return u.Update(func(s *ApikeyUpsert) {
+		s.ClearDisabled()
+	})
+}
+
+// SetIdent sets the "ident" field.
+func (u *ApikeyUpsertBulk) SetIdent(v string) *ApikeyUpsertBulk {
+	return u.Update(func(s *ApikeyUpsert) {
+		s.SetIdent(v)
+	})
+}
+
+// UpdateIdent sets the "ident" field to the value that was provided on create.
+func (u *ApikeyUpsertBulk) UpdateIdent() *ApikeyUpsertBulk {
+	return u.Update(func(s *ApikeyUpsert) {
+		s.UpdateIdent()
+	})
+}
+
+// ClearIdent clears the value of the "ident" field.
+func (u *ApikeyUpsertBulk) ClearIdent() *ApikeyUpsertBulk {
+	return u.Update(func(s *ApikeyUpsert) {
+		s.ClearIdent()
+	})
+}
+
+// SetKey sets the "key" field.
+func (u *ApikeyUpsertBulk) SetKey(v string) *ApikeyUpsertBulk {
+	return u.Update(func(s *ApikeyUpsert) {
+		s.SetKey(v)
+	})
+}
+
+// UpdateKey sets the "key" field to the value that was provided on create.
+func (u *ApikeyUpsertBulk) UpdateKey() *ApikeyUpsertBulk {
+	return u.Update(func(s *ApikeyUpsert) {
+		s.UpdateKey()
+	})
+}
+
+// SetOrder sets the "order" field.
+func (u *ApikeyUpsertBulk) SetOrder(v int) *ApikeyUpsertBulk {
+	return u.Update(func(s *ApikeyUpsert) {
+		s.SetOrder(v)
+	})
+}
+
+// AddOrder adds v to the "order" field.
+func (u *ApikeyUpsertBulk) AddOrder(v int) *ApikeyUpsertBulk {
+	return u.Update(func(s *ApikeyUpsert) {
+		s.AddOrder(v)
+	})
+}
+
+// UpdateOrder sets the "order" field to the value that was provided on create.
+func (u *ApikeyUpsertBulk) UpdateOrder() *ApikeyUpsertBulk {
+	return u.Update(func(s *ApikeyUpsert) {
+		s.UpdateOrder()
+	})
+}
+
+// ClearOrder clears the value of the "order" field.
+func (u *ApikeyUpsertBulk) ClearOrder() *ApikeyUpsertBulk {
+	return u.Update(func(s *ApikeyUpsert) {
+		s.ClearOrder()
+	})
+}
+
+// SetSystems sets the "systems" field.
+func (u *ApikeyUpsertBulk) SetSystems(v string) *ApikeyUpsertBulk {
+	return u.Update(func(s *ApikeyUpsert) {
+		s.SetSystems(v)
+	})
+}
+
+// UpdateSystems sets the "systems" field to the value that was provided on create.
+func (u *ApikeyUpsertBulk) UpdateSystems() *ApikeyUpsertBulk {
+	return u.Update(func(s *ApikeyUpsert) {
+		s.UpdateSystems()
+	})
+}
+
+// Exec executes the query.
+func (u *ApikeyUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the ApikeyCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for ApikeyCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ApikeyUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

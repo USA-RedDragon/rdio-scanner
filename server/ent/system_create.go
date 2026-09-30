@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/USA-RedDragon/rdio-scanner/server/ent/system"
@@ -17,6 +18,7 @@ type SystemCreate struct {
 	config
 	mutation *SystemMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetAutoPopulate sets the "auto_populate" field.
@@ -165,6 +167,7 @@ func (_c *SystemCreate) createSpec() (*System, *sqlgraph.CreateSpec) {
 		_node = &System{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(system.Table, sqlgraph.NewFieldSpec(system.FieldID, field.TypeInt))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = id
@@ -196,11 +199,363 @@ func (_c *SystemCreate) createSpec() (*System, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.System.Create().
+//		SetAutoPopulate(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.SystemUpsert) {
+//			SetAutoPopulate(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *SystemCreate) OnConflict(opts ...sql.ConflictOption) *SystemUpsertOne {
+	_c.conflict = opts
+	return &SystemUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.System.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *SystemCreate) OnConflictColumns(columns ...string) *SystemUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &SystemUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// SystemUpsertOne is the builder for "upsert"-ing
+	//  one System node.
+	SystemUpsertOne struct {
+		create *SystemCreate
+	}
+
+	// SystemUpsert is the "OnConflict" setter.
+	SystemUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetAutoPopulate sets the "auto_populate" field.
+func (u *SystemUpsert) SetAutoPopulate(v bool) *SystemUpsert {
+	u.Set(system.FieldAutoPopulate, v)
+	return u
+}
+
+// UpdateAutoPopulate sets the "auto_populate" field to the value that was provided on create.
+func (u *SystemUpsert) UpdateAutoPopulate() *SystemUpsert {
+	u.SetExcluded(system.FieldAutoPopulate)
+	return u
+}
+
+// ClearAutoPopulate clears the value of the "auto_populate" field.
+func (u *SystemUpsert) ClearAutoPopulate() *SystemUpsert {
+	u.SetNull(system.FieldAutoPopulate)
+	return u
+}
+
+// SetBlacklists sets the "blacklists" field.
+func (u *SystemUpsert) SetBlacklists(v string) *SystemUpsert {
+	u.Set(system.FieldBlacklists, v)
+	return u
+}
+
+// UpdateBlacklists sets the "blacklists" field to the value that was provided on create.
+func (u *SystemUpsert) UpdateBlacklists() *SystemUpsert {
+	u.SetExcluded(system.FieldBlacklists)
+	return u
+}
+
+// SetSystemID sets the "system_id" field.
+func (u *SystemUpsert) SetSystemID(v int) *SystemUpsert {
+	u.Set(system.FieldSystemID, v)
+	return u
+}
+
+// UpdateSystemID sets the "system_id" field to the value that was provided on create.
+func (u *SystemUpsert) UpdateSystemID() *SystemUpsert {
+	u.SetExcluded(system.FieldSystemID)
+	return u
+}
+
+// AddSystemID adds v to the "system_id" field.
+func (u *SystemUpsert) AddSystemID(v int) *SystemUpsert {
+	u.Add(system.FieldSystemID, v)
+	return u
+}
+
+// SetLabel sets the "label" field.
+func (u *SystemUpsert) SetLabel(v string) *SystemUpsert {
+	u.Set(system.FieldLabel, v)
+	return u
+}
+
+// UpdateLabel sets the "label" field to the value that was provided on create.
+func (u *SystemUpsert) UpdateLabel() *SystemUpsert {
+	u.SetExcluded(system.FieldLabel)
+	return u
+}
+
+// SetLed sets the "led" field.
+func (u *SystemUpsert) SetLed(v string) *SystemUpsert {
+	u.Set(system.FieldLed, v)
+	return u
+}
+
+// UpdateLed sets the "led" field to the value that was provided on create.
+func (u *SystemUpsert) UpdateLed() *SystemUpsert {
+	u.SetExcluded(system.FieldLed)
+	return u
+}
+
+// ClearLed clears the value of the "led" field.
+func (u *SystemUpsert) ClearLed() *SystemUpsert {
+	u.SetNull(system.FieldLed)
+	return u
+}
+
+// SetOrder sets the "order" field.
+func (u *SystemUpsert) SetOrder(v int) *SystemUpsert {
+	u.Set(system.FieldOrder, v)
+	return u
+}
+
+// UpdateOrder sets the "order" field to the value that was provided on create.
+func (u *SystemUpsert) UpdateOrder() *SystemUpsert {
+	u.SetExcluded(system.FieldOrder)
+	return u
+}
+
+// AddOrder adds v to the "order" field.
+func (u *SystemUpsert) AddOrder(v int) *SystemUpsert {
+	u.Add(system.FieldOrder, v)
+	return u
+}
+
+// ClearOrder clears the value of the "order" field.
+func (u *SystemUpsert) ClearOrder() *SystemUpsert {
+	u.SetNull(system.FieldOrder)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.System.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(system.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *SystemUpsertOne) UpdateNewValues() *SystemUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(system.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.System.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *SystemUpsertOne) Ignore() *SystemUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *SystemUpsertOne) DoNothing() *SystemUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the SystemCreate.OnConflict
+// documentation for more info.
+func (u *SystemUpsertOne) Update(set func(*SystemUpsert)) *SystemUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&SystemUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetAutoPopulate sets the "auto_populate" field.
+func (u *SystemUpsertOne) SetAutoPopulate(v bool) *SystemUpsertOne {
+	return u.Update(func(s *SystemUpsert) {
+		s.SetAutoPopulate(v)
+	})
+}
+
+// UpdateAutoPopulate sets the "auto_populate" field to the value that was provided on create.
+func (u *SystemUpsertOne) UpdateAutoPopulate() *SystemUpsertOne {
+	return u.Update(func(s *SystemUpsert) {
+		s.UpdateAutoPopulate()
+	})
+}
+
+// ClearAutoPopulate clears the value of the "auto_populate" field.
+func (u *SystemUpsertOne) ClearAutoPopulate() *SystemUpsertOne {
+	return u.Update(func(s *SystemUpsert) {
+		s.ClearAutoPopulate()
+	})
+}
+
+// SetBlacklists sets the "blacklists" field.
+func (u *SystemUpsertOne) SetBlacklists(v string) *SystemUpsertOne {
+	return u.Update(func(s *SystemUpsert) {
+		s.SetBlacklists(v)
+	})
+}
+
+// UpdateBlacklists sets the "blacklists" field to the value that was provided on create.
+func (u *SystemUpsertOne) UpdateBlacklists() *SystemUpsertOne {
+	return u.Update(func(s *SystemUpsert) {
+		s.UpdateBlacklists()
+	})
+}
+
+// SetSystemID sets the "system_id" field.
+func (u *SystemUpsertOne) SetSystemID(v int) *SystemUpsertOne {
+	return u.Update(func(s *SystemUpsert) {
+		s.SetSystemID(v)
+	})
+}
+
+// AddSystemID adds v to the "system_id" field.
+func (u *SystemUpsertOne) AddSystemID(v int) *SystemUpsertOne {
+	return u.Update(func(s *SystemUpsert) {
+		s.AddSystemID(v)
+	})
+}
+
+// UpdateSystemID sets the "system_id" field to the value that was provided on create.
+func (u *SystemUpsertOne) UpdateSystemID() *SystemUpsertOne {
+	return u.Update(func(s *SystemUpsert) {
+		s.UpdateSystemID()
+	})
+}
+
+// SetLabel sets the "label" field.
+func (u *SystemUpsertOne) SetLabel(v string) *SystemUpsertOne {
+	return u.Update(func(s *SystemUpsert) {
+		s.SetLabel(v)
+	})
+}
+
+// UpdateLabel sets the "label" field to the value that was provided on create.
+func (u *SystemUpsertOne) UpdateLabel() *SystemUpsertOne {
+	return u.Update(func(s *SystemUpsert) {
+		s.UpdateLabel()
+	})
+}
+
+// SetLed sets the "led" field.
+func (u *SystemUpsertOne) SetLed(v string) *SystemUpsertOne {
+	return u.Update(func(s *SystemUpsert) {
+		s.SetLed(v)
+	})
+}
+
+// UpdateLed sets the "led" field to the value that was provided on create.
+func (u *SystemUpsertOne) UpdateLed() *SystemUpsertOne {
+	return u.Update(func(s *SystemUpsert) {
+		s.UpdateLed()
+	})
+}
+
+// ClearLed clears the value of the "led" field.
+func (u *SystemUpsertOne) ClearLed() *SystemUpsertOne {
+	return u.Update(func(s *SystemUpsert) {
+		s.ClearLed()
+	})
+}
+
+// SetOrder sets the "order" field.
+func (u *SystemUpsertOne) SetOrder(v int) *SystemUpsertOne {
+	return u.Update(func(s *SystemUpsert) {
+		s.SetOrder(v)
+	})
+}
+
+// AddOrder adds v to the "order" field.
+func (u *SystemUpsertOne) AddOrder(v int) *SystemUpsertOne {
+	return u.Update(func(s *SystemUpsert) {
+		s.AddOrder(v)
+	})
+}
+
+// UpdateOrder sets the "order" field to the value that was provided on create.
+func (u *SystemUpsertOne) UpdateOrder() *SystemUpsertOne {
+	return u.Update(func(s *SystemUpsert) {
+		s.UpdateOrder()
+	})
+}
+
+// ClearOrder clears the value of the "order" field.
+func (u *SystemUpsertOne) ClearOrder() *SystemUpsertOne {
+	return u.Update(func(s *SystemUpsert) {
+		s.ClearOrder()
+	})
+}
+
+// Exec executes the query.
+func (u *SystemUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for SystemCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *SystemUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *SystemUpsertOne) ID(ctx context.Context) (id int, err error) {
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *SystemUpsertOne) IDX(ctx context.Context) int {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // SystemCreateBulk is the builder for creating many System entities in bulk.
 type SystemCreateBulk struct {
 	config
 	err      error
 	builders []*SystemCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the System entities in the database.
@@ -230,6 +585,7 @@ func (_c *SystemCreateBulk) Save(ctx context.Context) ([]*System, error) {
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -280,6 +636,239 @@ func (_c *SystemCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *SystemCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.System.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.SystemUpsert) {
+//			SetAutoPopulate(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *SystemCreateBulk) OnConflict(opts ...sql.ConflictOption) *SystemUpsertBulk {
+	_c.conflict = opts
+	return &SystemUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.System.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *SystemCreateBulk) OnConflictColumns(columns ...string) *SystemUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &SystemUpsertBulk{
+		create: _c,
+	}
+}
+
+// SystemUpsertBulk is the builder for "upsert"-ing
+// a bulk of System nodes.
+type SystemUpsertBulk struct {
+	create *SystemCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.System.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(system.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *SystemUpsertBulk) UpdateNewValues() *SystemUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(system.FieldID)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.System.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *SystemUpsertBulk) Ignore() *SystemUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *SystemUpsertBulk) DoNothing() *SystemUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the SystemCreateBulk.OnConflict
+// documentation for more info.
+func (u *SystemUpsertBulk) Update(set func(*SystemUpsert)) *SystemUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&SystemUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetAutoPopulate sets the "auto_populate" field.
+func (u *SystemUpsertBulk) SetAutoPopulate(v bool) *SystemUpsertBulk {
+	return u.Update(func(s *SystemUpsert) {
+		s.SetAutoPopulate(v)
+	})
+}
+
+// UpdateAutoPopulate sets the "auto_populate" field to the value that was provided on create.
+func (u *SystemUpsertBulk) UpdateAutoPopulate() *SystemUpsertBulk {
+	return u.Update(func(s *SystemUpsert) {
+		s.UpdateAutoPopulate()
+	})
+}
+
+// ClearAutoPopulate clears the value of the "auto_populate" field.
+func (u *SystemUpsertBulk) ClearAutoPopulate() *SystemUpsertBulk {
+	return u.Update(func(s *SystemUpsert) {
+		s.ClearAutoPopulate()
+	})
+}
+
+// SetBlacklists sets the "blacklists" field.
+func (u *SystemUpsertBulk) SetBlacklists(v string) *SystemUpsertBulk {
+	return u.Update(func(s *SystemUpsert) {
+		s.SetBlacklists(v)
+	})
+}
+
+// UpdateBlacklists sets the "blacklists" field to the value that was provided on create.
+func (u *SystemUpsertBulk) UpdateBlacklists() *SystemUpsertBulk {
+	return u.Update(func(s *SystemUpsert) {
+		s.UpdateBlacklists()
+	})
+}
+
+// SetSystemID sets the "system_id" field.
+func (u *SystemUpsertBulk) SetSystemID(v int) *SystemUpsertBulk {
+	return u.Update(func(s *SystemUpsert) {
+		s.SetSystemID(v)
+	})
+}
+
+// AddSystemID adds v to the "system_id" field.
+func (u *SystemUpsertBulk) AddSystemID(v int) *SystemUpsertBulk {
+	return u.Update(func(s *SystemUpsert) {
+		s.AddSystemID(v)
+	})
+}
+
+// UpdateSystemID sets the "system_id" field to the value that was provided on create.
+func (u *SystemUpsertBulk) UpdateSystemID() *SystemUpsertBulk {
+	return u.Update(func(s *SystemUpsert) {
+		s.UpdateSystemID()
+	})
+}
+
+// SetLabel sets the "label" field.
+func (u *SystemUpsertBulk) SetLabel(v string) *SystemUpsertBulk {
+	return u.Update(func(s *SystemUpsert) {
+		s.SetLabel(v)
+	})
+}
+
+// UpdateLabel sets the "label" field to the value that was provided on create.
+func (u *SystemUpsertBulk) UpdateLabel() *SystemUpsertBulk {
+	return u.Update(func(s *SystemUpsert) {
+		s.UpdateLabel()
+	})
+}
+
+// SetLed sets the "led" field.
+func (u *SystemUpsertBulk) SetLed(v string) *SystemUpsertBulk {
+	return u.Update(func(s *SystemUpsert) {
+		s.SetLed(v)
+	})
+}
+
+// UpdateLed sets the "led" field to the value that was provided on create.
+func (u *SystemUpsertBulk) UpdateLed() *SystemUpsertBulk {
+	return u.Update(func(s *SystemUpsert) {
+		s.UpdateLed()
+	})
+}
+
+// ClearLed clears the value of the "led" field.
+func (u *SystemUpsertBulk) ClearLed() *SystemUpsertBulk {
+	return u.Update(func(s *SystemUpsert) {
+		s.ClearLed()
+	})
+}
+
+// SetOrder sets the "order" field.
+func (u *SystemUpsertBulk) SetOrder(v int) *SystemUpsertBulk {
+	return u.Update(func(s *SystemUpsert) {
+		s.SetOrder(v)
+	})
+}
+
+// AddOrder adds v to the "order" field.
+func (u *SystemUpsertBulk) AddOrder(v int) *SystemUpsertBulk {
+	return u.Update(func(s *SystemUpsert) {
+		s.AddOrder(v)
+	})
+}
+
+// UpdateOrder sets the "order" field to the value that was provided on create.
+func (u *SystemUpsertBulk) UpdateOrder() *SystemUpsertBulk {
+	return u.Update(func(s *SystemUpsert) {
+		s.UpdateOrder()
+	})
+}
+
+// ClearOrder clears the value of the "order" field.
+func (u *SystemUpsertBulk) ClearOrder() *SystemUpsertBulk {
+	return u.Update(func(s *SystemUpsert) {
+		s.ClearOrder()
+	})
+}
+
+// Exec executes the query.
+func (u *SystemUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the SystemCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for SystemCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *SystemUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

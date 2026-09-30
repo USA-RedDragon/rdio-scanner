@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/USA-RedDragon/rdio-scanner/server/ent/talkgroup"
@@ -17,6 +18,7 @@ type TalkgroupCreate struct {
 	config
 	mutation *TalkgroupMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetFrequency sets the "frequency" field.
@@ -183,6 +185,7 @@ func (_c *TalkgroupCreate) createSpec() (*Talkgroup, *sqlgraph.CreateSpec) {
 		_node = &Talkgroup{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(talkgroup.Table, sqlgraph.NewFieldSpec(talkgroup.FieldID, field.TypeInt))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = id
@@ -226,11 +229,493 @@ func (_c *TalkgroupCreate) createSpec() (*Talkgroup, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Talkgroup.Create().
+//		SetFrequency(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.TalkgroupUpsert) {
+//			SetFrequency(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *TalkgroupCreate) OnConflict(opts ...sql.ConflictOption) *TalkgroupUpsertOne {
+	_c.conflict = opts
+	return &TalkgroupUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Talkgroup.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *TalkgroupCreate) OnConflictColumns(columns ...string) *TalkgroupUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &TalkgroupUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// TalkgroupUpsertOne is the builder for "upsert"-ing
+	//  one Talkgroup node.
+	TalkgroupUpsertOne struct {
+		create *TalkgroupCreate
+	}
+
+	// TalkgroupUpsert is the "OnConflict" setter.
+	TalkgroupUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetFrequency sets the "frequency" field.
+func (u *TalkgroupUpsert) SetFrequency(v int) *TalkgroupUpsert {
+	u.Set(talkgroup.FieldFrequency, v)
+	return u
+}
+
+// UpdateFrequency sets the "frequency" field to the value that was provided on create.
+func (u *TalkgroupUpsert) UpdateFrequency() *TalkgroupUpsert {
+	u.SetExcluded(talkgroup.FieldFrequency)
+	return u
+}
+
+// AddFrequency adds v to the "frequency" field.
+func (u *TalkgroupUpsert) AddFrequency(v int) *TalkgroupUpsert {
+	u.Add(talkgroup.FieldFrequency, v)
+	return u
+}
+
+// ClearFrequency clears the value of the "frequency" field.
+func (u *TalkgroupUpsert) ClearFrequency() *TalkgroupUpsert {
+	u.SetNull(talkgroup.FieldFrequency)
+	return u
+}
+
+// SetGroupID sets the "group_id" field.
+func (u *TalkgroupUpsert) SetGroupID(v int) *TalkgroupUpsert {
+	u.Set(talkgroup.FieldGroupID, v)
+	return u
+}
+
+// UpdateGroupID sets the "group_id" field to the value that was provided on create.
+func (u *TalkgroupUpsert) UpdateGroupID() *TalkgroupUpsert {
+	u.SetExcluded(talkgroup.FieldGroupID)
+	return u
+}
+
+// AddGroupID adds v to the "group_id" field.
+func (u *TalkgroupUpsert) AddGroupID(v int) *TalkgroupUpsert {
+	u.Add(talkgroup.FieldGroupID, v)
+	return u
+}
+
+// SetTalkgroupID sets the "talkgroup_id" field.
+func (u *TalkgroupUpsert) SetTalkgroupID(v int) *TalkgroupUpsert {
+	u.Set(talkgroup.FieldTalkgroupID, v)
+	return u
+}
+
+// UpdateTalkgroupID sets the "talkgroup_id" field to the value that was provided on create.
+func (u *TalkgroupUpsert) UpdateTalkgroupID() *TalkgroupUpsert {
+	u.SetExcluded(talkgroup.FieldTalkgroupID)
+	return u
+}
+
+// AddTalkgroupID adds v to the "talkgroup_id" field.
+func (u *TalkgroupUpsert) AddTalkgroupID(v int) *TalkgroupUpsert {
+	u.Add(talkgroup.FieldTalkgroupID, v)
+	return u
+}
+
+// SetLabel sets the "label" field.
+func (u *TalkgroupUpsert) SetLabel(v string) *TalkgroupUpsert {
+	u.Set(talkgroup.FieldLabel, v)
+	return u
+}
+
+// UpdateLabel sets the "label" field to the value that was provided on create.
+func (u *TalkgroupUpsert) UpdateLabel() *TalkgroupUpsert {
+	u.SetExcluded(talkgroup.FieldLabel)
+	return u
+}
+
+// SetLed sets the "led" field.
+func (u *TalkgroupUpsert) SetLed(v string) *TalkgroupUpsert {
+	u.Set(talkgroup.FieldLed, v)
+	return u
+}
+
+// UpdateLed sets the "led" field to the value that was provided on create.
+func (u *TalkgroupUpsert) UpdateLed() *TalkgroupUpsert {
+	u.SetExcluded(talkgroup.FieldLed)
+	return u
+}
+
+// ClearLed clears the value of the "led" field.
+func (u *TalkgroupUpsert) ClearLed() *TalkgroupUpsert {
+	u.SetNull(talkgroup.FieldLed)
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *TalkgroupUpsert) SetName(v string) *TalkgroupUpsert {
+	u.Set(talkgroup.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *TalkgroupUpsert) UpdateName() *TalkgroupUpsert {
+	u.SetExcluded(talkgroup.FieldName)
+	return u
+}
+
+// SetOrder sets the "order" field.
+func (u *TalkgroupUpsert) SetOrder(v int) *TalkgroupUpsert {
+	u.Set(talkgroup.FieldOrder, v)
+	return u
+}
+
+// UpdateOrder sets the "order" field to the value that was provided on create.
+func (u *TalkgroupUpsert) UpdateOrder() *TalkgroupUpsert {
+	u.SetExcluded(talkgroup.FieldOrder)
+	return u
+}
+
+// AddOrder adds v to the "order" field.
+func (u *TalkgroupUpsert) AddOrder(v int) *TalkgroupUpsert {
+	u.Add(talkgroup.FieldOrder, v)
+	return u
+}
+
+// ClearOrder clears the value of the "order" field.
+func (u *TalkgroupUpsert) ClearOrder() *TalkgroupUpsert {
+	u.SetNull(talkgroup.FieldOrder)
+	return u
+}
+
+// SetSystemID sets the "system_id" field.
+func (u *TalkgroupUpsert) SetSystemID(v int) *TalkgroupUpsert {
+	u.Set(talkgroup.FieldSystemID, v)
+	return u
+}
+
+// UpdateSystemID sets the "system_id" field to the value that was provided on create.
+func (u *TalkgroupUpsert) UpdateSystemID() *TalkgroupUpsert {
+	u.SetExcluded(talkgroup.FieldSystemID)
+	return u
+}
+
+// AddSystemID adds v to the "system_id" field.
+func (u *TalkgroupUpsert) AddSystemID(v int) *TalkgroupUpsert {
+	u.Add(talkgroup.FieldSystemID, v)
+	return u
+}
+
+// SetTagID sets the "tag_id" field.
+func (u *TalkgroupUpsert) SetTagID(v int) *TalkgroupUpsert {
+	u.Set(talkgroup.FieldTagID, v)
+	return u
+}
+
+// UpdateTagID sets the "tag_id" field to the value that was provided on create.
+func (u *TalkgroupUpsert) UpdateTagID() *TalkgroupUpsert {
+	u.SetExcluded(talkgroup.FieldTagID)
+	return u
+}
+
+// AddTagID adds v to the "tag_id" field.
+func (u *TalkgroupUpsert) AddTagID(v int) *TalkgroupUpsert {
+	u.Add(talkgroup.FieldTagID, v)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Talkgroup.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(talkgroup.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *TalkgroupUpsertOne) UpdateNewValues() *TalkgroupUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(talkgroup.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Talkgroup.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *TalkgroupUpsertOne) Ignore() *TalkgroupUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *TalkgroupUpsertOne) DoNothing() *TalkgroupUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the TalkgroupCreate.OnConflict
+// documentation for more info.
+func (u *TalkgroupUpsertOne) Update(set func(*TalkgroupUpsert)) *TalkgroupUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&TalkgroupUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetFrequency sets the "frequency" field.
+func (u *TalkgroupUpsertOne) SetFrequency(v int) *TalkgroupUpsertOne {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.SetFrequency(v)
+	})
+}
+
+// AddFrequency adds v to the "frequency" field.
+func (u *TalkgroupUpsertOne) AddFrequency(v int) *TalkgroupUpsertOne {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.AddFrequency(v)
+	})
+}
+
+// UpdateFrequency sets the "frequency" field to the value that was provided on create.
+func (u *TalkgroupUpsertOne) UpdateFrequency() *TalkgroupUpsertOne {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.UpdateFrequency()
+	})
+}
+
+// ClearFrequency clears the value of the "frequency" field.
+func (u *TalkgroupUpsertOne) ClearFrequency() *TalkgroupUpsertOne {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.ClearFrequency()
+	})
+}
+
+// SetGroupID sets the "group_id" field.
+func (u *TalkgroupUpsertOne) SetGroupID(v int) *TalkgroupUpsertOne {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.SetGroupID(v)
+	})
+}
+
+// AddGroupID adds v to the "group_id" field.
+func (u *TalkgroupUpsertOne) AddGroupID(v int) *TalkgroupUpsertOne {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.AddGroupID(v)
+	})
+}
+
+// UpdateGroupID sets the "group_id" field to the value that was provided on create.
+func (u *TalkgroupUpsertOne) UpdateGroupID() *TalkgroupUpsertOne {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.UpdateGroupID()
+	})
+}
+
+// SetTalkgroupID sets the "talkgroup_id" field.
+func (u *TalkgroupUpsertOne) SetTalkgroupID(v int) *TalkgroupUpsertOne {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.SetTalkgroupID(v)
+	})
+}
+
+// AddTalkgroupID adds v to the "talkgroup_id" field.
+func (u *TalkgroupUpsertOne) AddTalkgroupID(v int) *TalkgroupUpsertOne {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.AddTalkgroupID(v)
+	})
+}
+
+// UpdateTalkgroupID sets the "talkgroup_id" field to the value that was provided on create.
+func (u *TalkgroupUpsertOne) UpdateTalkgroupID() *TalkgroupUpsertOne {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.UpdateTalkgroupID()
+	})
+}
+
+// SetLabel sets the "label" field.
+func (u *TalkgroupUpsertOne) SetLabel(v string) *TalkgroupUpsertOne {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.SetLabel(v)
+	})
+}
+
+// UpdateLabel sets the "label" field to the value that was provided on create.
+func (u *TalkgroupUpsertOne) UpdateLabel() *TalkgroupUpsertOne {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.UpdateLabel()
+	})
+}
+
+// SetLed sets the "led" field.
+func (u *TalkgroupUpsertOne) SetLed(v string) *TalkgroupUpsertOne {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.SetLed(v)
+	})
+}
+
+// UpdateLed sets the "led" field to the value that was provided on create.
+func (u *TalkgroupUpsertOne) UpdateLed() *TalkgroupUpsertOne {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.UpdateLed()
+	})
+}
+
+// ClearLed clears the value of the "led" field.
+func (u *TalkgroupUpsertOne) ClearLed() *TalkgroupUpsertOne {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.ClearLed()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *TalkgroupUpsertOne) SetName(v string) *TalkgroupUpsertOne {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *TalkgroupUpsertOne) UpdateName() *TalkgroupUpsertOne {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetOrder sets the "order" field.
+func (u *TalkgroupUpsertOne) SetOrder(v int) *TalkgroupUpsertOne {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.SetOrder(v)
+	})
+}
+
+// AddOrder adds v to the "order" field.
+func (u *TalkgroupUpsertOne) AddOrder(v int) *TalkgroupUpsertOne {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.AddOrder(v)
+	})
+}
+
+// UpdateOrder sets the "order" field to the value that was provided on create.
+func (u *TalkgroupUpsertOne) UpdateOrder() *TalkgroupUpsertOne {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.UpdateOrder()
+	})
+}
+
+// ClearOrder clears the value of the "order" field.
+func (u *TalkgroupUpsertOne) ClearOrder() *TalkgroupUpsertOne {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.ClearOrder()
+	})
+}
+
+// SetSystemID sets the "system_id" field.
+func (u *TalkgroupUpsertOne) SetSystemID(v int) *TalkgroupUpsertOne {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.SetSystemID(v)
+	})
+}
+
+// AddSystemID adds v to the "system_id" field.
+func (u *TalkgroupUpsertOne) AddSystemID(v int) *TalkgroupUpsertOne {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.AddSystemID(v)
+	})
+}
+
+// UpdateSystemID sets the "system_id" field to the value that was provided on create.
+func (u *TalkgroupUpsertOne) UpdateSystemID() *TalkgroupUpsertOne {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.UpdateSystemID()
+	})
+}
+
+// SetTagID sets the "tag_id" field.
+func (u *TalkgroupUpsertOne) SetTagID(v int) *TalkgroupUpsertOne {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.SetTagID(v)
+	})
+}
+
+// AddTagID adds v to the "tag_id" field.
+func (u *TalkgroupUpsertOne) AddTagID(v int) *TalkgroupUpsertOne {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.AddTagID(v)
+	})
+}
+
+// UpdateTagID sets the "tag_id" field to the value that was provided on create.
+func (u *TalkgroupUpsertOne) UpdateTagID() *TalkgroupUpsertOne {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.UpdateTagID()
+	})
+}
+
+// Exec executes the query.
+func (u *TalkgroupUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for TalkgroupCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *TalkgroupUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *TalkgroupUpsertOne) ID(ctx context.Context) (id int, err error) {
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *TalkgroupUpsertOne) IDX(ctx context.Context) int {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // TalkgroupCreateBulk is the builder for creating many Talkgroup entities in bulk.
 type TalkgroupCreateBulk struct {
 	config
 	err      error
 	builders []*TalkgroupCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Talkgroup entities in the database.
@@ -259,6 +744,7 @@ func (_c *TalkgroupCreateBulk) Save(ctx context.Context) ([]*Talkgroup, error) {
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -309,6 +795,309 @@ func (_c *TalkgroupCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *TalkgroupCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Talkgroup.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.TalkgroupUpsert) {
+//			SetFrequency(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *TalkgroupCreateBulk) OnConflict(opts ...sql.ConflictOption) *TalkgroupUpsertBulk {
+	_c.conflict = opts
+	return &TalkgroupUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Talkgroup.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *TalkgroupCreateBulk) OnConflictColumns(columns ...string) *TalkgroupUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &TalkgroupUpsertBulk{
+		create: _c,
+	}
+}
+
+// TalkgroupUpsertBulk is the builder for "upsert"-ing
+// a bulk of Talkgroup nodes.
+type TalkgroupUpsertBulk struct {
+	create *TalkgroupCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Talkgroup.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(talkgroup.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *TalkgroupUpsertBulk) UpdateNewValues() *TalkgroupUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(talkgroup.FieldID)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Talkgroup.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *TalkgroupUpsertBulk) Ignore() *TalkgroupUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *TalkgroupUpsertBulk) DoNothing() *TalkgroupUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the TalkgroupCreateBulk.OnConflict
+// documentation for more info.
+func (u *TalkgroupUpsertBulk) Update(set func(*TalkgroupUpsert)) *TalkgroupUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&TalkgroupUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetFrequency sets the "frequency" field.
+func (u *TalkgroupUpsertBulk) SetFrequency(v int) *TalkgroupUpsertBulk {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.SetFrequency(v)
+	})
+}
+
+// AddFrequency adds v to the "frequency" field.
+func (u *TalkgroupUpsertBulk) AddFrequency(v int) *TalkgroupUpsertBulk {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.AddFrequency(v)
+	})
+}
+
+// UpdateFrequency sets the "frequency" field to the value that was provided on create.
+func (u *TalkgroupUpsertBulk) UpdateFrequency() *TalkgroupUpsertBulk {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.UpdateFrequency()
+	})
+}
+
+// ClearFrequency clears the value of the "frequency" field.
+func (u *TalkgroupUpsertBulk) ClearFrequency() *TalkgroupUpsertBulk {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.ClearFrequency()
+	})
+}
+
+// SetGroupID sets the "group_id" field.
+func (u *TalkgroupUpsertBulk) SetGroupID(v int) *TalkgroupUpsertBulk {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.SetGroupID(v)
+	})
+}
+
+// AddGroupID adds v to the "group_id" field.
+func (u *TalkgroupUpsertBulk) AddGroupID(v int) *TalkgroupUpsertBulk {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.AddGroupID(v)
+	})
+}
+
+// UpdateGroupID sets the "group_id" field to the value that was provided on create.
+func (u *TalkgroupUpsertBulk) UpdateGroupID() *TalkgroupUpsertBulk {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.UpdateGroupID()
+	})
+}
+
+// SetTalkgroupID sets the "talkgroup_id" field.
+func (u *TalkgroupUpsertBulk) SetTalkgroupID(v int) *TalkgroupUpsertBulk {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.SetTalkgroupID(v)
+	})
+}
+
+// AddTalkgroupID adds v to the "talkgroup_id" field.
+func (u *TalkgroupUpsertBulk) AddTalkgroupID(v int) *TalkgroupUpsertBulk {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.AddTalkgroupID(v)
+	})
+}
+
+// UpdateTalkgroupID sets the "talkgroup_id" field to the value that was provided on create.
+func (u *TalkgroupUpsertBulk) UpdateTalkgroupID() *TalkgroupUpsertBulk {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.UpdateTalkgroupID()
+	})
+}
+
+// SetLabel sets the "label" field.
+func (u *TalkgroupUpsertBulk) SetLabel(v string) *TalkgroupUpsertBulk {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.SetLabel(v)
+	})
+}
+
+// UpdateLabel sets the "label" field to the value that was provided on create.
+func (u *TalkgroupUpsertBulk) UpdateLabel() *TalkgroupUpsertBulk {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.UpdateLabel()
+	})
+}
+
+// SetLed sets the "led" field.
+func (u *TalkgroupUpsertBulk) SetLed(v string) *TalkgroupUpsertBulk {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.SetLed(v)
+	})
+}
+
+// UpdateLed sets the "led" field to the value that was provided on create.
+func (u *TalkgroupUpsertBulk) UpdateLed() *TalkgroupUpsertBulk {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.UpdateLed()
+	})
+}
+
+// ClearLed clears the value of the "led" field.
+func (u *TalkgroupUpsertBulk) ClearLed() *TalkgroupUpsertBulk {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.ClearLed()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *TalkgroupUpsertBulk) SetName(v string) *TalkgroupUpsertBulk {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *TalkgroupUpsertBulk) UpdateName() *TalkgroupUpsertBulk {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetOrder sets the "order" field.
+func (u *TalkgroupUpsertBulk) SetOrder(v int) *TalkgroupUpsertBulk {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.SetOrder(v)
+	})
+}
+
+// AddOrder adds v to the "order" field.
+func (u *TalkgroupUpsertBulk) AddOrder(v int) *TalkgroupUpsertBulk {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.AddOrder(v)
+	})
+}
+
+// UpdateOrder sets the "order" field to the value that was provided on create.
+func (u *TalkgroupUpsertBulk) UpdateOrder() *TalkgroupUpsertBulk {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.UpdateOrder()
+	})
+}
+
+// ClearOrder clears the value of the "order" field.
+func (u *TalkgroupUpsertBulk) ClearOrder() *TalkgroupUpsertBulk {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.ClearOrder()
+	})
+}
+
+// SetSystemID sets the "system_id" field.
+func (u *TalkgroupUpsertBulk) SetSystemID(v int) *TalkgroupUpsertBulk {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.SetSystemID(v)
+	})
+}
+
+// AddSystemID adds v to the "system_id" field.
+func (u *TalkgroupUpsertBulk) AddSystemID(v int) *TalkgroupUpsertBulk {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.AddSystemID(v)
+	})
+}
+
+// UpdateSystemID sets the "system_id" field to the value that was provided on create.
+func (u *TalkgroupUpsertBulk) UpdateSystemID() *TalkgroupUpsertBulk {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.UpdateSystemID()
+	})
+}
+
+// SetTagID sets the "tag_id" field.
+func (u *TalkgroupUpsertBulk) SetTagID(v int) *TalkgroupUpsertBulk {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.SetTagID(v)
+	})
+}
+
+// AddTagID adds v to the "tag_id" field.
+func (u *TalkgroupUpsertBulk) AddTagID(v int) *TalkgroupUpsertBulk {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.AddTagID(v)
+	})
+}
+
+// UpdateTagID sets the "tag_id" field to the value that was provided on create.
+func (u *TalkgroupUpsertBulk) UpdateTagID() *TalkgroupUpsertBulk {
+	return u.Update(func(s *TalkgroupUpsert) {
+		s.UpdateTagID()
+	})
+}
+
+// Exec executes the query.
+func (u *TalkgroupUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the TalkgroupCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for TalkgroupCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *TalkgroupUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

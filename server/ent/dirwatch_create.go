@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/USA-RedDragon/rdio-scanner/server/ent/dirwatch"
@@ -17,6 +18,7 @@ type DirwatchCreate struct {
 	config
 	mutation *DirwatchMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetDelay sets the "delay" field.
@@ -271,6 +273,7 @@ func (_c *DirwatchCreate) createSpec() (*Dirwatch, *sqlgraph.CreateSpec) {
 		_node = &Dirwatch{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(dirwatch.Table, sqlgraph.NewFieldSpec(dirwatch.FieldID, field.TypeInt))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = id
@@ -326,11 +329,662 @@ func (_c *DirwatchCreate) createSpec() (*Dirwatch, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Dirwatch.Create().
+//		SetDelay(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.DirwatchUpsert) {
+//			SetDelay(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *DirwatchCreate) OnConflict(opts ...sql.ConflictOption) *DirwatchUpsertOne {
+	_c.conflict = opts
+	return &DirwatchUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Dirwatch.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *DirwatchCreate) OnConflictColumns(columns ...string) *DirwatchUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &DirwatchUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// DirwatchUpsertOne is the builder for "upsert"-ing
+	//  one Dirwatch node.
+	DirwatchUpsertOne struct {
+		create *DirwatchCreate
+	}
+
+	// DirwatchUpsert is the "OnConflict" setter.
+	DirwatchUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetDelay sets the "delay" field.
+func (u *DirwatchUpsert) SetDelay(v int) *DirwatchUpsert {
+	u.Set(dirwatch.FieldDelay, v)
+	return u
+}
+
+// UpdateDelay sets the "delay" field to the value that was provided on create.
+func (u *DirwatchUpsert) UpdateDelay() *DirwatchUpsert {
+	u.SetExcluded(dirwatch.FieldDelay)
+	return u
+}
+
+// AddDelay adds v to the "delay" field.
+func (u *DirwatchUpsert) AddDelay(v int) *DirwatchUpsert {
+	u.Add(dirwatch.FieldDelay, v)
+	return u
+}
+
+// ClearDelay clears the value of the "delay" field.
+func (u *DirwatchUpsert) ClearDelay() *DirwatchUpsert {
+	u.SetNull(dirwatch.FieldDelay)
+	return u
+}
+
+// SetDeleteAfter sets the "delete_after" field.
+func (u *DirwatchUpsert) SetDeleteAfter(v bool) *DirwatchUpsert {
+	u.Set(dirwatch.FieldDeleteAfter, v)
+	return u
+}
+
+// UpdateDeleteAfter sets the "delete_after" field to the value that was provided on create.
+func (u *DirwatchUpsert) UpdateDeleteAfter() *DirwatchUpsert {
+	u.SetExcluded(dirwatch.FieldDeleteAfter)
+	return u
+}
+
+// ClearDeleteAfter clears the value of the "delete_after" field.
+func (u *DirwatchUpsert) ClearDeleteAfter() *DirwatchUpsert {
+	u.SetNull(dirwatch.FieldDeleteAfter)
+	return u
+}
+
+// SetDirectory sets the "directory" field.
+func (u *DirwatchUpsert) SetDirectory(v string) *DirwatchUpsert {
+	u.Set(dirwatch.FieldDirectory, v)
+	return u
+}
+
+// UpdateDirectory sets the "directory" field to the value that was provided on create.
+func (u *DirwatchUpsert) UpdateDirectory() *DirwatchUpsert {
+	u.SetExcluded(dirwatch.FieldDirectory)
+	return u
+}
+
+// SetDisabled sets the "disabled" field.
+func (u *DirwatchUpsert) SetDisabled(v bool) *DirwatchUpsert {
+	u.Set(dirwatch.FieldDisabled, v)
+	return u
+}
+
+// UpdateDisabled sets the "disabled" field to the value that was provided on create.
+func (u *DirwatchUpsert) UpdateDisabled() *DirwatchUpsert {
+	u.SetExcluded(dirwatch.FieldDisabled)
+	return u
+}
+
+// ClearDisabled clears the value of the "disabled" field.
+func (u *DirwatchUpsert) ClearDisabled() *DirwatchUpsert {
+	u.SetNull(dirwatch.FieldDisabled)
+	return u
+}
+
+// SetExtension sets the "extension" field.
+func (u *DirwatchUpsert) SetExtension(v string) *DirwatchUpsert {
+	u.Set(dirwatch.FieldExtension, v)
+	return u
+}
+
+// UpdateExtension sets the "extension" field to the value that was provided on create.
+func (u *DirwatchUpsert) UpdateExtension() *DirwatchUpsert {
+	u.SetExcluded(dirwatch.FieldExtension)
+	return u
+}
+
+// ClearExtension clears the value of the "extension" field.
+func (u *DirwatchUpsert) ClearExtension() *DirwatchUpsert {
+	u.SetNull(dirwatch.FieldExtension)
+	return u
+}
+
+// SetFrequency sets the "frequency" field.
+func (u *DirwatchUpsert) SetFrequency(v int) *DirwatchUpsert {
+	u.Set(dirwatch.FieldFrequency, v)
+	return u
+}
+
+// UpdateFrequency sets the "frequency" field to the value that was provided on create.
+func (u *DirwatchUpsert) UpdateFrequency() *DirwatchUpsert {
+	u.SetExcluded(dirwatch.FieldFrequency)
+	return u
+}
+
+// AddFrequency adds v to the "frequency" field.
+func (u *DirwatchUpsert) AddFrequency(v int) *DirwatchUpsert {
+	u.Add(dirwatch.FieldFrequency, v)
+	return u
+}
+
+// ClearFrequency clears the value of the "frequency" field.
+func (u *DirwatchUpsert) ClearFrequency() *DirwatchUpsert {
+	u.SetNull(dirwatch.FieldFrequency)
+	return u
+}
+
+// SetMask sets the "mask" field.
+func (u *DirwatchUpsert) SetMask(v string) *DirwatchUpsert {
+	u.Set(dirwatch.FieldMask, v)
+	return u
+}
+
+// UpdateMask sets the "mask" field to the value that was provided on create.
+func (u *DirwatchUpsert) UpdateMask() *DirwatchUpsert {
+	u.SetExcluded(dirwatch.FieldMask)
+	return u
+}
+
+// ClearMask clears the value of the "mask" field.
+func (u *DirwatchUpsert) ClearMask() *DirwatchUpsert {
+	u.SetNull(dirwatch.FieldMask)
+	return u
+}
+
+// SetOrder sets the "order" field.
+func (u *DirwatchUpsert) SetOrder(v int) *DirwatchUpsert {
+	u.Set(dirwatch.FieldOrder, v)
+	return u
+}
+
+// UpdateOrder sets the "order" field to the value that was provided on create.
+func (u *DirwatchUpsert) UpdateOrder() *DirwatchUpsert {
+	u.SetExcluded(dirwatch.FieldOrder)
+	return u
+}
+
+// AddOrder adds v to the "order" field.
+func (u *DirwatchUpsert) AddOrder(v int) *DirwatchUpsert {
+	u.Add(dirwatch.FieldOrder, v)
+	return u
+}
+
+// ClearOrder clears the value of the "order" field.
+func (u *DirwatchUpsert) ClearOrder() *DirwatchUpsert {
+	u.SetNull(dirwatch.FieldOrder)
+	return u
+}
+
+// SetSystemID sets the "system_id" field.
+func (u *DirwatchUpsert) SetSystemID(v int) *DirwatchUpsert {
+	u.Set(dirwatch.FieldSystemID, v)
+	return u
+}
+
+// UpdateSystemID sets the "system_id" field to the value that was provided on create.
+func (u *DirwatchUpsert) UpdateSystemID() *DirwatchUpsert {
+	u.SetExcluded(dirwatch.FieldSystemID)
+	return u
+}
+
+// AddSystemID adds v to the "system_id" field.
+func (u *DirwatchUpsert) AddSystemID(v int) *DirwatchUpsert {
+	u.Add(dirwatch.FieldSystemID, v)
+	return u
+}
+
+// ClearSystemID clears the value of the "system_id" field.
+func (u *DirwatchUpsert) ClearSystemID() *DirwatchUpsert {
+	u.SetNull(dirwatch.FieldSystemID)
+	return u
+}
+
+// SetTalkgroupID sets the "talkgroup_id" field.
+func (u *DirwatchUpsert) SetTalkgroupID(v int) *DirwatchUpsert {
+	u.Set(dirwatch.FieldTalkgroupID, v)
+	return u
+}
+
+// UpdateTalkgroupID sets the "talkgroup_id" field to the value that was provided on create.
+func (u *DirwatchUpsert) UpdateTalkgroupID() *DirwatchUpsert {
+	u.SetExcluded(dirwatch.FieldTalkgroupID)
+	return u
+}
+
+// AddTalkgroupID adds v to the "talkgroup_id" field.
+func (u *DirwatchUpsert) AddTalkgroupID(v int) *DirwatchUpsert {
+	u.Add(dirwatch.FieldTalkgroupID, v)
+	return u
+}
+
+// ClearTalkgroupID clears the value of the "talkgroup_id" field.
+func (u *DirwatchUpsert) ClearTalkgroupID() *DirwatchUpsert {
+	u.SetNull(dirwatch.FieldTalkgroupID)
+	return u
+}
+
+// SetType sets the "type" field.
+func (u *DirwatchUpsert) SetType(v string) *DirwatchUpsert {
+	u.Set(dirwatch.FieldType, v)
+	return u
+}
+
+// UpdateType sets the "type" field to the value that was provided on create.
+func (u *DirwatchUpsert) UpdateType() *DirwatchUpsert {
+	u.SetExcluded(dirwatch.FieldType)
+	return u
+}
+
+// ClearType clears the value of the "type" field.
+func (u *DirwatchUpsert) ClearType() *DirwatchUpsert {
+	u.SetNull(dirwatch.FieldType)
+	return u
+}
+
+// SetUsePolling sets the "use_polling" field.
+func (u *DirwatchUpsert) SetUsePolling(v bool) *DirwatchUpsert {
+	u.Set(dirwatch.FieldUsePolling, v)
+	return u
+}
+
+// UpdateUsePolling sets the "use_polling" field to the value that was provided on create.
+func (u *DirwatchUpsert) UpdateUsePolling() *DirwatchUpsert {
+	u.SetExcluded(dirwatch.FieldUsePolling)
+	return u
+}
+
+// ClearUsePolling clears the value of the "use_polling" field.
+func (u *DirwatchUpsert) ClearUsePolling() *DirwatchUpsert {
+	u.SetNull(dirwatch.FieldUsePolling)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Dirwatch.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(dirwatch.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *DirwatchUpsertOne) UpdateNewValues() *DirwatchUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(dirwatch.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Dirwatch.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *DirwatchUpsertOne) Ignore() *DirwatchUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *DirwatchUpsertOne) DoNothing() *DirwatchUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the DirwatchCreate.OnConflict
+// documentation for more info.
+func (u *DirwatchUpsertOne) Update(set func(*DirwatchUpsert)) *DirwatchUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&DirwatchUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetDelay sets the "delay" field.
+func (u *DirwatchUpsertOne) SetDelay(v int) *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.SetDelay(v)
+	})
+}
+
+// AddDelay adds v to the "delay" field.
+func (u *DirwatchUpsertOne) AddDelay(v int) *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.AddDelay(v)
+	})
+}
+
+// UpdateDelay sets the "delay" field to the value that was provided on create.
+func (u *DirwatchUpsertOne) UpdateDelay() *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.UpdateDelay()
+	})
+}
+
+// ClearDelay clears the value of the "delay" field.
+func (u *DirwatchUpsertOne) ClearDelay() *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.ClearDelay()
+	})
+}
+
+// SetDeleteAfter sets the "delete_after" field.
+func (u *DirwatchUpsertOne) SetDeleteAfter(v bool) *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.SetDeleteAfter(v)
+	})
+}
+
+// UpdateDeleteAfter sets the "delete_after" field to the value that was provided on create.
+func (u *DirwatchUpsertOne) UpdateDeleteAfter() *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.UpdateDeleteAfter()
+	})
+}
+
+// ClearDeleteAfter clears the value of the "delete_after" field.
+func (u *DirwatchUpsertOne) ClearDeleteAfter() *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.ClearDeleteAfter()
+	})
+}
+
+// SetDirectory sets the "directory" field.
+func (u *DirwatchUpsertOne) SetDirectory(v string) *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.SetDirectory(v)
+	})
+}
+
+// UpdateDirectory sets the "directory" field to the value that was provided on create.
+func (u *DirwatchUpsertOne) UpdateDirectory() *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.UpdateDirectory()
+	})
+}
+
+// SetDisabled sets the "disabled" field.
+func (u *DirwatchUpsertOne) SetDisabled(v bool) *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.SetDisabled(v)
+	})
+}
+
+// UpdateDisabled sets the "disabled" field to the value that was provided on create.
+func (u *DirwatchUpsertOne) UpdateDisabled() *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.UpdateDisabled()
+	})
+}
+
+// ClearDisabled clears the value of the "disabled" field.
+func (u *DirwatchUpsertOne) ClearDisabled() *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.ClearDisabled()
+	})
+}
+
+// SetExtension sets the "extension" field.
+func (u *DirwatchUpsertOne) SetExtension(v string) *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.SetExtension(v)
+	})
+}
+
+// UpdateExtension sets the "extension" field to the value that was provided on create.
+func (u *DirwatchUpsertOne) UpdateExtension() *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.UpdateExtension()
+	})
+}
+
+// ClearExtension clears the value of the "extension" field.
+func (u *DirwatchUpsertOne) ClearExtension() *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.ClearExtension()
+	})
+}
+
+// SetFrequency sets the "frequency" field.
+func (u *DirwatchUpsertOne) SetFrequency(v int) *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.SetFrequency(v)
+	})
+}
+
+// AddFrequency adds v to the "frequency" field.
+func (u *DirwatchUpsertOne) AddFrequency(v int) *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.AddFrequency(v)
+	})
+}
+
+// UpdateFrequency sets the "frequency" field to the value that was provided on create.
+func (u *DirwatchUpsertOne) UpdateFrequency() *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.UpdateFrequency()
+	})
+}
+
+// ClearFrequency clears the value of the "frequency" field.
+func (u *DirwatchUpsertOne) ClearFrequency() *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.ClearFrequency()
+	})
+}
+
+// SetMask sets the "mask" field.
+func (u *DirwatchUpsertOne) SetMask(v string) *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.SetMask(v)
+	})
+}
+
+// UpdateMask sets the "mask" field to the value that was provided on create.
+func (u *DirwatchUpsertOne) UpdateMask() *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.UpdateMask()
+	})
+}
+
+// ClearMask clears the value of the "mask" field.
+func (u *DirwatchUpsertOne) ClearMask() *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.ClearMask()
+	})
+}
+
+// SetOrder sets the "order" field.
+func (u *DirwatchUpsertOne) SetOrder(v int) *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.SetOrder(v)
+	})
+}
+
+// AddOrder adds v to the "order" field.
+func (u *DirwatchUpsertOne) AddOrder(v int) *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.AddOrder(v)
+	})
+}
+
+// UpdateOrder sets the "order" field to the value that was provided on create.
+func (u *DirwatchUpsertOne) UpdateOrder() *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.UpdateOrder()
+	})
+}
+
+// ClearOrder clears the value of the "order" field.
+func (u *DirwatchUpsertOne) ClearOrder() *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.ClearOrder()
+	})
+}
+
+// SetSystemID sets the "system_id" field.
+func (u *DirwatchUpsertOne) SetSystemID(v int) *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.SetSystemID(v)
+	})
+}
+
+// AddSystemID adds v to the "system_id" field.
+func (u *DirwatchUpsertOne) AddSystemID(v int) *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.AddSystemID(v)
+	})
+}
+
+// UpdateSystemID sets the "system_id" field to the value that was provided on create.
+func (u *DirwatchUpsertOne) UpdateSystemID() *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.UpdateSystemID()
+	})
+}
+
+// ClearSystemID clears the value of the "system_id" field.
+func (u *DirwatchUpsertOne) ClearSystemID() *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.ClearSystemID()
+	})
+}
+
+// SetTalkgroupID sets the "talkgroup_id" field.
+func (u *DirwatchUpsertOne) SetTalkgroupID(v int) *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.SetTalkgroupID(v)
+	})
+}
+
+// AddTalkgroupID adds v to the "talkgroup_id" field.
+func (u *DirwatchUpsertOne) AddTalkgroupID(v int) *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.AddTalkgroupID(v)
+	})
+}
+
+// UpdateTalkgroupID sets the "talkgroup_id" field to the value that was provided on create.
+func (u *DirwatchUpsertOne) UpdateTalkgroupID() *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.UpdateTalkgroupID()
+	})
+}
+
+// ClearTalkgroupID clears the value of the "talkgroup_id" field.
+func (u *DirwatchUpsertOne) ClearTalkgroupID() *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.ClearTalkgroupID()
+	})
+}
+
+// SetType sets the "type" field.
+func (u *DirwatchUpsertOne) SetType(v string) *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.SetType(v)
+	})
+}
+
+// UpdateType sets the "type" field to the value that was provided on create.
+func (u *DirwatchUpsertOne) UpdateType() *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.UpdateType()
+	})
+}
+
+// ClearType clears the value of the "type" field.
+func (u *DirwatchUpsertOne) ClearType() *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.ClearType()
+	})
+}
+
+// SetUsePolling sets the "use_polling" field.
+func (u *DirwatchUpsertOne) SetUsePolling(v bool) *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.SetUsePolling(v)
+	})
+}
+
+// UpdateUsePolling sets the "use_polling" field to the value that was provided on create.
+func (u *DirwatchUpsertOne) UpdateUsePolling() *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.UpdateUsePolling()
+	})
+}
+
+// ClearUsePolling clears the value of the "use_polling" field.
+func (u *DirwatchUpsertOne) ClearUsePolling() *DirwatchUpsertOne {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.ClearUsePolling()
+	})
+}
+
+// Exec executes the query.
+func (u *DirwatchUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for DirwatchCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *DirwatchUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *DirwatchUpsertOne) ID(ctx context.Context) (id int, err error) {
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *DirwatchUpsertOne) IDX(ctx context.Context) int {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // DirwatchCreateBulk is the builder for creating many Dirwatch entities in bulk.
 type DirwatchCreateBulk struct {
 	config
 	err      error
 	builders []*DirwatchCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Dirwatch entities in the database.
@@ -360,6 +1014,7 @@ func (_c *DirwatchCreateBulk) Save(ctx context.Context) ([]*Dirwatch, error) {
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -410,6 +1065,400 @@ func (_c *DirwatchCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *DirwatchCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Dirwatch.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.DirwatchUpsert) {
+//			SetDelay(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *DirwatchCreateBulk) OnConflict(opts ...sql.ConflictOption) *DirwatchUpsertBulk {
+	_c.conflict = opts
+	return &DirwatchUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Dirwatch.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *DirwatchCreateBulk) OnConflictColumns(columns ...string) *DirwatchUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &DirwatchUpsertBulk{
+		create: _c,
+	}
+}
+
+// DirwatchUpsertBulk is the builder for "upsert"-ing
+// a bulk of Dirwatch nodes.
+type DirwatchUpsertBulk struct {
+	create *DirwatchCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Dirwatch.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(dirwatch.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *DirwatchUpsertBulk) UpdateNewValues() *DirwatchUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(dirwatch.FieldID)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Dirwatch.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *DirwatchUpsertBulk) Ignore() *DirwatchUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *DirwatchUpsertBulk) DoNothing() *DirwatchUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the DirwatchCreateBulk.OnConflict
+// documentation for more info.
+func (u *DirwatchUpsertBulk) Update(set func(*DirwatchUpsert)) *DirwatchUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&DirwatchUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetDelay sets the "delay" field.
+func (u *DirwatchUpsertBulk) SetDelay(v int) *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.SetDelay(v)
+	})
+}
+
+// AddDelay adds v to the "delay" field.
+func (u *DirwatchUpsertBulk) AddDelay(v int) *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.AddDelay(v)
+	})
+}
+
+// UpdateDelay sets the "delay" field to the value that was provided on create.
+func (u *DirwatchUpsertBulk) UpdateDelay() *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.UpdateDelay()
+	})
+}
+
+// ClearDelay clears the value of the "delay" field.
+func (u *DirwatchUpsertBulk) ClearDelay() *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.ClearDelay()
+	})
+}
+
+// SetDeleteAfter sets the "delete_after" field.
+func (u *DirwatchUpsertBulk) SetDeleteAfter(v bool) *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.SetDeleteAfter(v)
+	})
+}
+
+// UpdateDeleteAfter sets the "delete_after" field to the value that was provided on create.
+func (u *DirwatchUpsertBulk) UpdateDeleteAfter() *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.UpdateDeleteAfter()
+	})
+}
+
+// ClearDeleteAfter clears the value of the "delete_after" field.
+func (u *DirwatchUpsertBulk) ClearDeleteAfter() *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.ClearDeleteAfter()
+	})
+}
+
+// SetDirectory sets the "directory" field.
+func (u *DirwatchUpsertBulk) SetDirectory(v string) *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.SetDirectory(v)
+	})
+}
+
+// UpdateDirectory sets the "directory" field to the value that was provided on create.
+func (u *DirwatchUpsertBulk) UpdateDirectory() *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.UpdateDirectory()
+	})
+}
+
+// SetDisabled sets the "disabled" field.
+func (u *DirwatchUpsertBulk) SetDisabled(v bool) *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.SetDisabled(v)
+	})
+}
+
+// UpdateDisabled sets the "disabled" field to the value that was provided on create.
+func (u *DirwatchUpsertBulk) UpdateDisabled() *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.UpdateDisabled()
+	})
+}
+
+// ClearDisabled clears the value of the "disabled" field.
+func (u *DirwatchUpsertBulk) ClearDisabled() *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.ClearDisabled()
+	})
+}
+
+// SetExtension sets the "extension" field.
+func (u *DirwatchUpsertBulk) SetExtension(v string) *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.SetExtension(v)
+	})
+}
+
+// UpdateExtension sets the "extension" field to the value that was provided on create.
+func (u *DirwatchUpsertBulk) UpdateExtension() *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.UpdateExtension()
+	})
+}
+
+// ClearExtension clears the value of the "extension" field.
+func (u *DirwatchUpsertBulk) ClearExtension() *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.ClearExtension()
+	})
+}
+
+// SetFrequency sets the "frequency" field.
+func (u *DirwatchUpsertBulk) SetFrequency(v int) *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.SetFrequency(v)
+	})
+}
+
+// AddFrequency adds v to the "frequency" field.
+func (u *DirwatchUpsertBulk) AddFrequency(v int) *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.AddFrequency(v)
+	})
+}
+
+// UpdateFrequency sets the "frequency" field to the value that was provided on create.
+func (u *DirwatchUpsertBulk) UpdateFrequency() *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.UpdateFrequency()
+	})
+}
+
+// ClearFrequency clears the value of the "frequency" field.
+func (u *DirwatchUpsertBulk) ClearFrequency() *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.ClearFrequency()
+	})
+}
+
+// SetMask sets the "mask" field.
+func (u *DirwatchUpsertBulk) SetMask(v string) *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.SetMask(v)
+	})
+}
+
+// UpdateMask sets the "mask" field to the value that was provided on create.
+func (u *DirwatchUpsertBulk) UpdateMask() *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.UpdateMask()
+	})
+}
+
+// ClearMask clears the value of the "mask" field.
+func (u *DirwatchUpsertBulk) ClearMask() *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.ClearMask()
+	})
+}
+
+// SetOrder sets the "order" field.
+func (u *DirwatchUpsertBulk) SetOrder(v int) *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.SetOrder(v)
+	})
+}
+
+// AddOrder adds v to the "order" field.
+func (u *DirwatchUpsertBulk) AddOrder(v int) *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.AddOrder(v)
+	})
+}
+
+// UpdateOrder sets the "order" field to the value that was provided on create.
+func (u *DirwatchUpsertBulk) UpdateOrder() *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.UpdateOrder()
+	})
+}
+
+// ClearOrder clears the value of the "order" field.
+func (u *DirwatchUpsertBulk) ClearOrder() *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.ClearOrder()
+	})
+}
+
+// SetSystemID sets the "system_id" field.
+func (u *DirwatchUpsertBulk) SetSystemID(v int) *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.SetSystemID(v)
+	})
+}
+
+// AddSystemID adds v to the "system_id" field.
+func (u *DirwatchUpsertBulk) AddSystemID(v int) *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.AddSystemID(v)
+	})
+}
+
+// UpdateSystemID sets the "system_id" field to the value that was provided on create.
+func (u *DirwatchUpsertBulk) UpdateSystemID() *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.UpdateSystemID()
+	})
+}
+
+// ClearSystemID clears the value of the "system_id" field.
+func (u *DirwatchUpsertBulk) ClearSystemID() *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.ClearSystemID()
+	})
+}
+
+// SetTalkgroupID sets the "talkgroup_id" field.
+func (u *DirwatchUpsertBulk) SetTalkgroupID(v int) *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.SetTalkgroupID(v)
+	})
+}
+
+// AddTalkgroupID adds v to the "talkgroup_id" field.
+func (u *DirwatchUpsertBulk) AddTalkgroupID(v int) *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.AddTalkgroupID(v)
+	})
+}
+
+// UpdateTalkgroupID sets the "talkgroup_id" field to the value that was provided on create.
+func (u *DirwatchUpsertBulk) UpdateTalkgroupID() *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.UpdateTalkgroupID()
+	})
+}
+
+// ClearTalkgroupID clears the value of the "talkgroup_id" field.
+func (u *DirwatchUpsertBulk) ClearTalkgroupID() *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.ClearTalkgroupID()
+	})
+}
+
+// SetType sets the "type" field.
+func (u *DirwatchUpsertBulk) SetType(v string) *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.SetType(v)
+	})
+}
+
+// UpdateType sets the "type" field to the value that was provided on create.
+func (u *DirwatchUpsertBulk) UpdateType() *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.UpdateType()
+	})
+}
+
+// ClearType clears the value of the "type" field.
+func (u *DirwatchUpsertBulk) ClearType() *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.ClearType()
+	})
+}
+
+// SetUsePolling sets the "use_polling" field.
+func (u *DirwatchUpsertBulk) SetUsePolling(v bool) *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.SetUsePolling(v)
+	})
+}
+
+// UpdateUsePolling sets the "use_polling" field to the value that was provided on create.
+func (u *DirwatchUpsertBulk) UpdateUsePolling() *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.UpdateUsePolling()
+	})
+}
+
+// ClearUsePolling clears the value of the "use_polling" field.
+func (u *DirwatchUpsertBulk) ClearUsePolling() *DirwatchUpsertBulk {
+	return u.Update(func(s *DirwatchUpsert) {
+		s.ClearUsePolling()
+	})
+}
+
+// Exec executes the query.
+func (u *DirwatchUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the DirwatchCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for DirwatchCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *DirwatchUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

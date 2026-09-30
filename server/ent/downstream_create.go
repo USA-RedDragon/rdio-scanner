@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/USA-RedDragon/rdio-scanner/server/ent/downstream"
@@ -17,6 +18,7 @@ type DownstreamCreate struct {
 	config
 	mutation *DownstreamMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetAPIKey sets the "api_key" field.
@@ -151,6 +153,7 @@ func (_c *DownstreamCreate) createSpec() (*Downstream, *sqlgraph.CreateSpec) {
 		_node = &Downstream{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(downstream.Table, sqlgraph.NewFieldSpec(downstream.FieldID, field.TypeInt))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = id
@@ -178,11 +181,311 @@ func (_c *DownstreamCreate) createSpec() (*Downstream, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Downstream.Create().
+//		SetAPIKey(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.DownstreamUpsert) {
+//			SetAPIKey(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *DownstreamCreate) OnConflict(opts ...sql.ConflictOption) *DownstreamUpsertOne {
+	_c.conflict = opts
+	return &DownstreamUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Downstream.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *DownstreamCreate) OnConflictColumns(columns ...string) *DownstreamUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &DownstreamUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// DownstreamUpsertOne is the builder for "upsert"-ing
+	//  one Downstream node.
+	DownstreamUpsertOne struct {
+		create *DownstreamCreate
+	}
+
+	// DownstreamUpsert is the "OnConflict" setter.
+	DownstreamUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetAPIKey sets the "api_key" field.
+func (u *DownstreamUpsert) SetAPIKey(v string) *DownstreamUpsert {
+	u.Set(downstream.FieldAPIKey, v)
+	return u
+}
+
+// UpdateAPIKey sets the "api_key" field to the value that was provided on create.
+func (u *DownstreamUpsert) UpdateAPIKey() *DownstreamUpsert {
+	u.SetExcluded(downstream.FieldAPIKey)
+	return u
+}
+
+// SetDisabled sets the "disabled" field.
+func (u *DownstreamUpsert) SetDisabled(v bool) *DownstreamUpsert {
+	u.Set(downstream.FieldDisabled, v)
+	return u
+}
+
+// UpdateDisabled sets the "disabled" field to the value that was provided on create.
+func (u *DownstreamUpsert) UpdateDisabled() *DownstreamUpsert {
+	u.SetExcluded(downstream.FieldDisabled)
+	return u
+}
+
+// ClearDisabled clears the value of the "disabled" field.
+func (u *DownstreamUpsert) ClearDisabled() *DownstreamUpsert {
+	u.SetNull(downstream.FieldDisabled)
+	return u
+}
+
+// SetOrder sets the "order" field.
+func (u *DownstreamUpsert) SetOrder(v int) *DownstreamUpsert {
+	u.Set(downstream.FieldOrder, v)
+	return u
+}
+
+// UpdateOrder sets the "order" field to the value that was provided on create.
+func (u *DownstreamUpsert) UpdateOrder() *DownstreamUpsert {
+	u.SetExcluded(downstream.FieldOrder)
+	return u
+}
+
+// AddOrder adds v to the "order" field.
+func (u *DownstreamUpsert) AddOrder(v int) *DownstreamUpsert {
+	u.Add(downstream.FieldOrder, v)
+	return u
+}
+
+// ClearOrder clears the value of the "order" field.
+func (u *DownstreamUpsert) ClearOrder() *DownstreamUpsert {
+	u.SetNull(downstream.FieldOrder)
+	return u
+}
+
+// SetSystems sets the "systems" field.
+func (u *DownstreamUpsert) SetSystems(v string) *DownstreamUpsert {
+	u.Set(downstream.FieldSystems, v)
+	return u
+}
+
+// UpdateSystems sets the "systems" field to the value that was provided on create.
+func (u *DownstreamUpsert) UpdateSystems() *DownstreamUpsert {
+	u.SetExcluded(downstream.FieldSystems)
+	return u
+}
+
+// SetURL sets the "url" field.
+func (u *DownstreamUpsert) SetURL(v string) *DownstreamUpsert {
+	u.Set(downstream.FieldURL, v)
+	return u
+}
+
+// UpdateURL sets the "url" field to the value that was provided on create.
+func (u *DownstreamUpsert) UpdateURL() *DownstreamUpsert {
+	u.SetExcluded(downstream.FieldURL)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Downstream.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(downstream.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *DownstreamUpsertOne) UpdateNewValues() *DownstreamUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(downstream.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Downstream.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *DownstreamUpsertOne) Ignore() *DownstreamUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *DownstreamUpsertOne) DoNothing() *DownstreamUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the DownstreamCreate.OnConflict
+// documentation for more info.
+func (u *DownstreamUpsertOne) Update(set func(*DownstreamUpsert)) *DownstreamUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&DownstreamUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetAPIKey sets the "api_key" field.
+func (u *DownstreamUpsertOne) SetAPIKey(v string) *DownstreamUpsertOne {
+	return u.Update(func(s *DownstreamUpsert) {
+		s.SetAPIKey(v)
+	})
+}
+
+// UpdateAPIKey sets the "api_key" field to the value that was provided on create.
+func (u *DownstreamUpsertOne) UpdateAPIKey() *DownstreamUpsertOne {
+	return u.Update(func(s *DownstreamUpsert) {
+		s.UpdateAPIKey()
+	})
+}
+
+// SetDisabled sets the "disabled" field.
+func (u *DownstreamUpsertOne) SetDisabled(v bool) *DownstreamUpsertOne {
+	return u.Update(func(s *DownstreamUpsert) {
+		s.SetDisabled(v)
+	})
+}
+
+// UpdateDisabled sets the "disabled" field to the value that was provided on create.
+func (u *DownstreamUpsertOne) UpdateDisabled() *DownstreamUpsertOne {
+	return u.Update(func(s *DownstreamUpsert) {
+		s.UpdateDisabled()
+	})
+}
+
+// ClearDisabled clears the value of the "disabled" field.
+func (u *DownstreamUpsertOne) ClearDisabled() *DownstreamUpsertOne {
+	return u.Update(func(s *DownstreamUpsert) {
+		s.ClearDisabled()
+	})
+}
+
+// SetOrder sets the "order" field.
+func (u *DownstreamUpsertOne) SetOrder(v int) *DownstreamUpsertOne {
+	return u.Update(func(s *DownstreamUpsert) {
+		s.SetOrder(v)
+	})
+}
+
+// AddOrder adds v to the "order" field.
+func (u *DownstreamUpsertOne) AddOrder(v int) *DownstreamUpsertOne {
+	return u.Update(func(s *DownstreamUpsert) {
+		s.AddOrder(v)
+	})
+}
+
+// UpdateOrder sets the "order" field to the value that was provided on create.
+func (u *DownstreamUpsertOne) UpdateOrder() *DownstreamUpsertOne {
+	return u.Update(func(s *DownstreamUpsert) {
+		s.UpdateOrder()
+	})
+}
+
+// ClearOrder clears the value of the "order" field.
+func (u *DownstreamUpsertOne) ClearOrder() *DownstreamUpsertOne {
+	return u.Update(func(s *DownstreamUpsert) {
+		s.ClearOrder()
+	})
+}
+
+// SetSystems sets the "systems" field.
+func (u *DownstreamUpsertOne) SetSystems(v string) *DownstreamUpsertOne {
+	return u.Update(func(s *DownstreamUpsert) {
+		s.SetSystems(v)
+	})
+}
+
+// UpdateSystems sets the "systems" field to the value that was provided on create.
+func (u *DownstreamUpsertOne) UpdateSystems() *DownstreamUpsertOne {
+	return u.Update(func(s *DownstreamUpsert) {
+		s.UpdateSystems()
+	})
+}
+
+// SetURL sets the "url" field.
+func (u *DownstreamUpsertOne) SetURL(v string) *DownstreamUpsertOne {
+	return u.Update(func(s *DownstreamUpsert) {
+		s.SetURL(v)
+	})
+}
+
+// UpdateURL sets the "url" field to the value that was provided on create.
+func (u *DownstreamUpsertOne) UpdateURL() *DownstreamUpsertOne {
+	return u.Update(func(s *DownstreamUpsert) {
+		s.UpdateURL()
+	})
+}
+
+// Exec executes the query.
+func (u *DownstreamUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for DownstreamCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *DownstreamUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *DownstreamUpsertOne) ID(ctx context.Context) (id int, err error) {
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *DownstreamUpsertOne) IDX(ctx context.Context) int {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // DownstreamCreateBulk is the builder for creating many Downstream entities in bulk.
 type DownstreamCreateBulk struct {
 	config
 	err      error
 	builders []*DownstreamCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Downstream entities in the database.
@@ -212,6 +515,7 @@ func (_c *DownstreamCreateBulk) Save(ctx context.Context) ([]*Downstream, error)
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -262,6 +566,211 @@ func (_c *DownstreamCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *DownstreamCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Downstream.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.DownstreamUpsert) {
+//			SetAPIKey(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *DownstreamCreateBulk) OnConflict(opts ...sql.ConflictOption) *DownstreamUpsertBulk {
+	_c.conflict = opts
+	return &DownstreamUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Downstream.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *DownstreamCreateBulk) OnConflictColumns(columns ...string) *DownstreamUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &DownstreamUpsertBulk{
+		create: _c,
+	}
+}
+
+// DownstreamUpsertBulk is the builder for "upsert"-ing
+// a bulk of Downstream nodes.
+type DownstreamUpsertBulk struct {
+	create *DownstreamCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Downstream.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(downstream.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *DownstreamUpsertBulk) UpdateNewValues() *DownstreamUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(downstream.FieldID)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Downstream.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *DownstreamUpsertBulk) Ignore() *DownstreamUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *DownstreamUpsertBulk) DoNothing() *DownstreamUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the DownstreamCreateBulk.OnConflict
+// documentation for more info.
+func (u *DownstreamUpsertBulk) Update(set func(*DownstreamUpsert)) *DownstreamUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&DownstreamUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetAPIKey sets the "api_key" field.
+func (u *DownstreamUpsertBulk) SetAPIKey(v string) *DownstreamUpsertBulk {
+	return u.Update(func(s *DownstreamUpsert) {
+		s.SetAPIKey(v)
+	})
+}
+
+// UpdateAPIKey sets the "api_key" field to the value that was provided on create.
+func (u *DownstreamUpsertBulk) UpdateAPIKey() *DownstreamUpsertBulk {
+	return u.Update(func(s *DownstreamUpsert) {
+		s.UpdateAPIKey()
+	})
+}
+
+// SetDisabled sets the "disabled" field.
+func (u *DownstreamUpsertBulk) SetDisabled(v bool) *DownstreamUpsertBulk {
+	return u.Update(func(s *DownstreamUpsert) {
+		s.SetDisabled(v)
+	})
+}
+
+// UpdateDisabled sets the "disabled" field to the value that was provided on create.
+func (u *DownstreamUpsertBulk) UpdateDisabled() *DownstreamUpsertBulk {
+	return u.Update(func(s *DownstreamUpsert) {
+		s.UpdateDisabled()
+	})
+}
+
+// ClearDisabled clears the value of the "disabled" field.
+func (u *DownstreamUpsertBulk) ClearDisabled() *DownstreamUpsertBulk {
+	return u.Update(func(s *DownstreamUpsert) {
+		s.ClearDisabled()
+	})
+}
+
+// SetOrder sets the "order" field.
+func (u *DownstreamUpsertBulk) SetOrder(v int) *DownstreamUpsertBulk {
+	return u.Update(func(s *DownstreamUpsert) {
+		s.SetOrder(v)
+	})
+}
+
+// AddOrder adds v to the "order" field.
+func (u *DownstreamUpsertBulk) AddOrder(v int) *DownstreamUpsertBulk {
+	return u.Update(func(s *DownstreamUpsert) {
+		s.AddOrder(v)
+	})
+}
+
+// UpdateOrder sets the "order" field to the value that was provided on create.
+func (u *DownstreamUpsertBulk) UpdateOrder() *DownstreamUpsertBulk {
+	return u.Update(func(s *DownstreamUpsert) {
+		s.UpdateOrder()
+	})
+}
+
+// ClearOrder clears the value of the "order" field.
+func (u *DownstreamUpsertBulk) ClearOrder() *DownstreamUpsertBulk {
+	return u.Update(func(s *DownstreamUpsert) {
+		s.ClearOrder()
+	})
+}
+
+// SetSystems sets the "systems" field.
+func (u *DownstreamUpsertBulk) SetSystems(v string) *DownstreamUpsertBulk {
+	return u.Update(func(s *DownstreamUpsert) {
+		s.SetSystems(v)
+	})
+}
+
+// UpdateSystems sets the "systems" field to the value that was provided on create.
+func (u *DownstreamUpsertBulk) UpdateSystems() *DownstreamUpsertBulk {
+	return u.Update(func(s *DownstreamUpsert) {
+		s.UpdateSystems()
+	})
+}
+
+// SetURL sets the "url" field.
+func (u *DownstreamUpsertBulk) SetURL(v string) *DownstreamUpsertBulk {
+	return u.Update(func(s *DownstreamUpsert) {
+		s.SetURL(v)
+	})
+}
+
+// UpdateURL sets the "url" field to the value that was provided on create.
+func (u *DownstreamUpsertBulk) UpdateURL() *DownstreamUpsertBulk {
+	return u.Update(func(s *DownstreamUpsert) {
+		s.UpdateURL()
+	})
+}
+
+// Exec executes the query.
+func (u *DownstreamUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the DownstreamCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for DownstreamCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *DownstreamUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

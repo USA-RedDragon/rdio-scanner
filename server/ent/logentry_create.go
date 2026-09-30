@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/USA-RedDragon/rdio-scanner/server/ent/logentry"
@@ -18,6 +19,7 @@ type LogEntryCreate struct {
 	config
 	mutation *LogEntryMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetDateTime sets the "date_time" field.
@@ -115,6 +117,7 @@ func (_c *LogEntryCreate) createSpec() (*LogEntry, *sqlgraph.CreateSpec) {
 		_node = &LogEntry{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(logentry.Table, sqlgraph.NewFieldSpec(logentry.FieldID, field.TypeInt))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = id
@@ -134,11 +137,220 @@ func (_c *LogEntryCreate) createSpec() (*LogEntry, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.LogEntry.Create().
+//		SetDateTime(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.LogEntryUpsert) {
+//			SetDateTime(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *LogEntryCreate) OnConflict(opts ...sql.ConflictOption) *LogEntryUpsertOne {
+	_c.conflict = opts
+	return &LogEntryUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.LogEntry.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *LogEntryCreate) OnConflictColumns(columns ...string) *LogEntryUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &LogEntryUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// LogEntryUpsertOne is the builder for "upsert"-ing
+	//  one LogEntry node.
+	LogEntryUpsertOne struct {
+		create *LogEntryCreate
+	}
+
+	// LogEntryUpsert is the "OnConflict" setter.
+	LogEntryUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetDateTime sets the "date_time" field.
+func (u *LogEntryUpsert) SetDateTime(v time.Time) *LogEntryUpsert {
+	u.Set(logentry.FieldDateTime, v)
+	return u
+}
+
+// UpdateDateTime sets the "date_time" field to the value that was provided on create.
+func (u *LogEntryUpsert) UpdateDateTime() *LogEntryUpsert {
+	u.SetExcluded(logentry.FieldDateTime)
+	return u
+}
+
+// SetLevel sets the "level" field.
+func (u *LogEntryUpsert) SetLevel(v string) *LogEntryUpsert {
+	u.Set(logentry.FieldLevel, v)
+	return u
+}
+
+// UpdateLevel sets the "level" field to the value that was provided on create.
+func (u *LogEntryUpsert) UpdateLevel() *LogEntryUpsert {
+	u.SetExcluded(logentry.FieldLevel)
+	return u
+}
+
+// SetMessage sets the "message" field.
+func (u *LogEntryUpsert) SetMessage(v string) *LogEntryUpsert {
+	u.Set(logentry.FieldMessage, v)
+	return u
+}
+
+// UpdateMessage sets the "message" field to the value that was provided on create.
+func (u *LogEntryUpsert) UpdateMessage() *LogEntryUpsert {
+	u.SetExcluded(logentry.FieldMessage)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.LogEntry.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(logentry.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *LogEntryUpsertOne) UpdateNewValues() *LogEntryUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(logentry.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.LogEntry.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *LogEntryUpsertOne) Ignore() *LogEntryUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *LogEntryUpsertOne) DoNothing() *LogEntryUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the LogEntryCreate.OnConflict
+// documentation for more info.
+func (u *LogEntryUpsertOne) Update(set func(*LogEntryUpsert)) *LogEntryUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&LogEntryUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetDateTime sets the "date_time" field.
+func (u *LogEntryUpsertOne) SetDateTime(v time.Time) *LogEntryUpsertOne {
+	return u.Update(func(s *LogEntryUpsert) {
+		s.SetDateTime(v)
+	})
+}
+
+// UpdateDateTime sets the "date_time" field to the value that was provided on create.
+func (u *LogEntryUpsertOne) UpdateDateTime() *LogEntryUpsertOne {
+	return u.Update(func(s *LogEntryUpsert) {
+		s.UpdateDateTime()
+	})
+}
+
+// SetLevel sets the "level" field.
+func (u *LogEntryUpsertOne) SetLevel(v string) *LogEntryUpsertOne {
+	return u.Update(func(s *LogEntryUpsert) {
+		s.SetLevel(v)
+	})
+}
+
+// UpdateLevel sets the "level" field to the value that was provided on create.
+func (u *LogEntryUpsertOne) UpdateLevel() *LogEntryUpsertOne {
+	return u.Update(func(s *LogEntryUpsert) {
+		s.UpdateLevel()
+	})
+}
+
+// SetMessage sets the "message" field.
+func (u *LogEntryUpsertOne) SetMessage(v string) *LogEntryUpsertOne {
+	return u.Update(func(s *LogEntryUpsert) {
+		s.SetMessage(v)
+	})
+}
+
+// UpdateMessage sets the "message" field to the value that was provided on create.
+func (u *LogEntryUpsertOne) UpdateMessage() *LogEntryUpsertOne {
+	return u.Update(func(s *LogEntryUpsert) {
+		s.UpdateMessage()
+	})
+}
+
+// Exec executes the query.
+func (u *LogEntryUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for LogEntryCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *LogEntryUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *LogEntryUpsertOne) ID(ctx context.Context) (id int, err error) {
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *LogEntryUpsertOne) IDX(ctx context.Context) int {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // LogEntryCreateBulk is the builder for creating many LogEntry entities in bulk.
 type LogEntryCreateBulk struct {
 	config
 	err      error
 	builders []*LogEntryCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the LogEntry entities in the database.
@@ -167,6 +379,7 @@ func (_c *LogEntryCreateBulk) Save(ctx context.Context) ([]*LogEntry, error) {
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -217,6 +430,162 @@ func (_c *LogEntryCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *LogEntryCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.LogEntry.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.LogEntryUpsert) {
+//			SetDateTime(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *LogEntryCreateBulk) OnConflict(opts ...sql.ConflictOption) *LogEntryUpsertBulk {
+	_c.conflict = opts
+	return &LogEntryUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.LogEntry.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *LogEntryCreateBulk) OnConflictColumns(columns ...string) *LogEntryUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &LogEntryUpsertBulk{
+		create: _c,
+	}
+}
+
+// LogEntryUpsertBulk is the builder for "upsert"-ing
+// a bulk of LogEntry nodes.
+type LogEntryUpsertBulk struct {
+	create *LogEntryCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.LogEntry.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(logentry.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *LogEntryUpsertBulk) UpdateNewValues() *LogEntryUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(logentry.FieldID)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.LogEntry.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *LogEntryUpsertBulk) Ignore() *LogEntryUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *LogEntryUpsertBulk) DoNothing() *LogEntryUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the LogEntryCreateBulk.OnConflict
+// documentation for more info.
+func (u *LogEntryUpsertBulk) Update(set func(*LogEntryUpsert)) *LogEntryUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&LogEntryUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetDateTime sets the "date_time" field.
+func (u *LogEntryUpsertBulk) SetDateTime(v time.Time) *LogEntryUpsertBulk {
+	return u.Update(func(s *LogEntryUpsert) {
+		s.SetDateTime(v)
+	})
+}
+
+// UpdateDateTime sets the "date_time" field to the value that was provided on create.
+func (u *LogEntryUpsertBulk) UpdateDateTime() *LogEntryUpsertBulk {
+	return u.Update(func(s *LogEntryUpsert) {
+		s.UpdateDateTime()
+	})
+}
+
+// SetLevel sets the "level" field.
+func (u *LogEntryUpsertBulk) SetLevel(v string) *LogEntryUpsertBulk {
+	return u.Update(func(s *LogEntryUpsert) {
+		s.SetLevel(v)
+	})
+}
+
+// UpdateLevel sets the "level" field to the value that was provided on create.
+func (u *LogEntryUpsertBulk) UpdateLevel() *LogEntryUpsertBulk {
+	return u.Update(func(s *LogEntryUpsert) {
+		s.UpdateLevel()
+	})
+}
+
+// SetMessage sets the "message" field.
+func (u *LogEntryUpsertBulk) SetMessage(v string) *LogEntryUpsertBulk {
+	return u.Update(func(s *LogEntryUpsert) {
+		s.SetMessage(v)
+	})
+}
+
+// UpdateMessage sets the "message" field to the value that was provided on create.
+func (u *LogEntryUpsertBulk) UpdateMessage() *LogEntryUpsertBulk {
+	return u.Update(func(s *LogEntryUpsert) {
+		s.UpdateMessage()
+	})
+}
+
+// Exec executes the query.
+func (u *LogEntryUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the LogEntryCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for LogEntryCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *LogEntryUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

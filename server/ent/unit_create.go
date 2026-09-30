@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/USA-RedDragon/rdio-scanner/server/ent/unit"
@@ -17,6 +18,7 @@ type UnitCreate struct {
 	config
 	mutation *UnitMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetUnitID sets the "unit_id" field.
@@ -128,6 +130,7 @@ func (_c *UnitCreate) createSpec() (*Unit, *sqlgraph.CreateSpec) {
 		_node = &Unit{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(unit.Table, sqlgraph.NewFieldSpec(unit.FieldID, field.TypeInt))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = id
@@ -151,11 +154,298 @@ func (_c *UnitCreate) createSpec() (*Unit, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Unit.Create().
+//		SetUnitID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.UnitUpsert) {
+//			SetUnitID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *UnitCreate) OnConflict(opts ...sql.ConflictOption) *UnitUpsertOne {
+	_c.conflict = opts
+	return &UnitUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Unit.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *UnitCreate) OnConflictColumns(columns ...string) *UnitUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &UnitUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// UnitUpsertOne is the builder for "upsert"-ing
+	//  one Unit node.
+	UnitUpsertOne struct {
+		create *UnitCreate
+	}
+
+	// UnitUpsert is the "OnConflict" setter.
+	UnitUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetUnitID sets the "unit_id" field.
+func (u *UnitUpsert) SetUnitID(v int) *UnitUpsert {
+	u.Set(unit.FieldUnitID, v)
+	return u
+}
+
+// UpdateUnitID sets the "unit_id" field to the value that was provided on create.
+func (u *UnitUpsert) UpdateUnitID() *UnitUpsert {
+	u.SetExcluded(unit.FieldUnitID)
+	return u
+}
+
+// AddUnitID adds v to the "unit_id" field.
+func (u *UnitUpsert) AddUnitID(v int) *UnitUpsert {
+	u.Add(unit.FieldUnitID, v)
+	return u
+}
+
+// SetLabel sets the "label" field.
+func (u *UnitUpsert) SetLabel(v string) *UnitUpsert {
+	u.Set(unit.FieldLabel, v)
+	return u
+}
+
+// UpdateLabel sets the "label" field to the value that was provided on create.
+func (u *UnitUpsert) UpdateLabel() *UnitUpsert {
+	u.SetExcluded(unit.FieldLabel)
+	return u
+}
+
+// SetOrder sets the "order" field.
+func (u *UnitUpsert) SetOrder(v int) *UnitUpsert {
+	u.Set(unit.FieldOrder, v)
+	return u
+}
+
+// UpdateOrder sets the "order" field to the value that was provided on create.
+func (u *UnitUpsert) UpdateOrder() *UnitUpsert {
+	u.SetExcluded(unit.FieldOrder)
+	return u
+}
+
+// AddOrder adds v to the "order" field.
+func (u *UnitUpsert) AddOrder(v int) *UnitUpsert {
+	u.Add(unit.FieldOrder, v)
+	return u
+}
+
+// ClearOrder clears the value of the "order" field.
+func (u *UnitUpsert) ClearOrder() *UnitUpsert {
+	u.SetNull(unit.FieldOrder)
+	return u
+}
+
+// SetSystemID sets the "system_id" field.
+func (u *UnitUpsert) SetSystemID(v int) *UnitUpsert {
+	u.Set(unit.FieldSystemID, v)
+	return u
+}
+
+// UpdateSystemID sets the "system_id" field to the value that was provided on create.
+func (u *UnitUpsert) UpdateSystemID() *UnitUpsert {
+	u.SetExcluded(unit.FieldSystemID)
+	return u
+}
+
+// AddSystemID adds v to the "system_id" field.
+func (u *UnitUpsert) AddSystemID(v int) *UnitUpsert {
+	u.Add(unit.FieldSystemID, v)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Unit.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(unit.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *UnitUpsertOne) UpdateNewValues() *UnitUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(unit.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Unit.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *UnitUpsertOne) Ignore() *UnitUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *UnitUpsertOne) DoNothing() *UnitUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the UnitCreate.OnConflict
+// documentation for more info.
+func (u *UnitUpsertOne) Update(set func(*UnitUpsert)) *UnitUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&UnitUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetUnitID sets the "unit_id" field.
+func (u *UnitUpsertOne) SetUnitID(v int) *UnitUpsertOne {
+	return u.Update(func(s *UnitUpsert) {
+		s.SetUnitID(v)
+	})
+}
+
+// AddUnitID adds v to the "unit_id" field.
+func (u *UnitUpsertOne) AddUnitID(v int) *UnitUpsertOne {
+	return u.Update(func(s *UnitUpsert) {
+		s.AddUnitID(v)
+	})
+}
+
+// UpdateUnitID sets the "unit_id" field to the value that was provided on create.
+func (u *UnitUpsertOne) UpdateUnitID() *UnitUpsertOne {
+	return u.Update(func(s *UnitUpsert) {
+		s.UpdateUnitID()
+	})
+}
+
+// SetLabel sets the "label" field.
+func (u *UnitUpsertOne) SetLabel(v string) *UnitUpsertOne {
+	return u.Update(func(s *UnitUpsert) {
+		s.SetLabel(v)
+	})
+}
+
+// UpdateLabel sets the "label" field to the value that was provided on create.
+func (u *UnitUpsertOne) UpdateLabel() *UnitUpsertOne {
+	return u.Update(func(s *UnitUpsert) {
+		s.UpdateLabel()
+	})
+}
+
+// SetOrder sets the "order" field.
+func (u *UnitUpsertOne) SetOrder(v int) *UnitUpsertOne {
+	return u.Update(func(s *UnitUpsert) {
+		s.SetOrder(v)
+	})
+}
+
+// AddOrder adds v to the "order" field.
+func (u *UnitUpsertOne) AddOrder(v int) *UnitUpsertOne {
+	return u.Update(func(s *UnitUpsert) {
+		s.AddOrder(v)
+	})
+}
+
+// UpdateOrder sets the "order" field to the value that was provided on create.
+func (u *UnitUpsertOne) UpdateOrder() *UnitUpsertOne {
+	return u.Update(func(s *UnitUpsert) {
+		s.UpdateOrder()
+	})
+}
+
+// ClearOrder clears the value of the "order" field.
+func (u *UnitUpsertOne) ClearOrder() *UnitUpsertOne {
+	return u.Update(func(s *UnitUpsert) {
+		s.ClearOrder()
+	})
+}
+
+// SetSystemID sets the "system_id" field.
+func (u *UnitUpsertOne) SetSystemID(v int) *UnitUpsertOne {
+	return u.Update(func(s *UnitUpsert) {
+		s.SetSystemID(v)
+	})
+}
+
+// AddSystemID adds v to the "system_id" field.
+func (u *UnitUpsertOne) AddSystemID(v int) *UnitUpsertOne {
+	return u.Update(func(s *UnitUpsert) {
+		s.AddSystemID(v)
+	})
+}
+
+// UpdateSystemID sets the "system_id" field to the value that was provided on create.
+func (u *UnitUpsertOne) UpdateSystemID() *UnitUpsertOne {
+	return u.Update(func(s *UnitUpsert) {
+		s.UpdateSystemID()
+	})
+}
+
+// Exec executes the query.
+func (u *UnitUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for UnitCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *UnitUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *UnitUpsertOne) ID(ctx context.Context) (id int, err error) {
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *UnitUpsertOne) IDX(ctx context.Context) int {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // UnitCreateBulk is the builder for creating many Unit entities in bulk.
 type UnitCreateBulk struct {
 	config
 	err      error
 	builders []*UnitCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Unit entities in the database.
@@ -184,6 +474,7 @@ func (_c *UnitCreateBulk) Save(ctx context.Context) ([]*Unit, error) {
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -234,6 +525,204 @@ func (_c *UnitCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *UnitCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Unit.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.UnitUpsert) {
+//			SetUnitID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *UnitCreateBulk) OnConflict(opts ...sql.ConflictOption) *UnitUpsertBulk {
+	_c.conflict = opts
+	return &UnitUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Unit.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *UnitCreateBulk) OnConflictColumns(columns ...string) *UnitUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &UnitUpsertBulk{
+		create: _c,
+	}
+}
+
+// UnitUpsertBulk is the builder for "upsert"-ing
+// a bulk of Unit nodes.
+type UnitUpsertBulk struct {
+	create *UnitCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Unit.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(unit.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *UnitUpsertBulk) UpdateNewValues() *UnitUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(unit.FieldID)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Unit.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *UnitUpsertBulk) Ignore() *UnitUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *UnitUpsertBulk) DoNothing() *UnitUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the UnitCreateBulk.OnConflict
+// documentation for more info.
+func (u *UnitUpsertBulk) Update(set func(*UnitUpsert)) *UnitUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&UnitUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetUnitID sets the "unit_id" field.
+func (u *UnitUpsertBulk) SetUnitID(v int) *UnitUpsertBulk {
+	return u.Update(func(s *UnitUpsert) {
+		s.SetUnitID(v)
+	})
+}
+
+// AddUnitID adds v to the "unit_id" field.
+func (u *UnitUpsertBulk) AddUnitID(v int) *UnitUpsertBulk {
+	return u.Update(func(s *UnitUpsert) {
+		s.AddUnitID(v)
+	})
+}
+
+// UpdateUnitID sets the "unit_id" field to the value that was provided on create.
+func (u *UnitUpsertBulk) UpdateUnitID() *UnitUpsertBulk {
+	return u.Update(func(s *UnitUpsert) {
+		s.UpdateUnitID()
+	})
+}
+
+// SetLabel sets the "label" field.
+func (u *UnitUpsertBulk) SetLabel(v string) *UnitUpsertBulk {
+	return u.Update(func(s *UnitUpsert) {
+		s.SetLabel(v)
+	})
+}
+
+// UpdateLabel sets the "label" field to the value that was provided on create.
+func (u *UnitUpsertBulk) UpdateLabel() *UnitUpsertBulk {
+	return u.Update(func(s *UnitUpsert) {
+		s.UpdateLabel()
+	})
+}
+
+// SetOrder sets the "order" field.
+func (u *UnitUpsertBulk) SetOrder(v int) *UnitUpsertBulk {
+	return u.Update(func(s *UnitUpsert) {
+		s.SetOrder(v)
+	})
+}
+
+// AddOrder adds v to the "order" field.
+func (u *UnitUpsertBulk) AddOrder(v int) *UnitUpsertBulk {
+	return u.Update(func(s *UnitUpsert) {
+		s.AddOrder(v)
+	})
+}
+
+// UpdateOrder sets the "order" field to the value that was provided on create.
+func (u *UnitUpsertBulk) UpdateOrder() *UnitUpsertBulk {
+	return u.Update(func(s *UnitUpsert) {
+		s.UpdateOrder()
+	})
+}
+
+// ClearOrder clears the value of the "order" field.
+func (u *UnitUpsertBulk) ClearOrder() *UnitUpsertBulk {
+	return u.Update(func(s *UnitUpsert) {
+		s.ClearOrder()
+	})
+}
+
+// SetSystemID sets the "system_id" field.
+func (u *UnitUpsertBulk) SetSystemID(v int) *UnitUpsertBulk {
+	return u.Update(func(s *UnitUpsert) {
+		s.SetSystemID(v)
+	})
+}
+
+// AddSystemID adds v to the "system_id" field.
+func (u *UnitUpsertBulk) AddSystemID(v int) *UnitUpsertBulk {
+	return u.Update(func(s *UnitUpsert) {
+		s.AddSystemID(v)
+	})
+}
+
+// UpdateSystemID sets the "system_id" field to the value that was provided on create.
+func (u *UnitUpsertBulk) UpdateSystemID() *UnitUpsertBulk {
+	return u.Update(func(s *UnitUpsert) {
+		s.UpdateSystemID()
+	})
+}
+
+// Exec executes the query.
+func (u *UnitUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the UnitCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for UnitCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *UnitUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

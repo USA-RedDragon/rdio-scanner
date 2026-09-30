@@ -15,4 +15,4 @@
 
 package ent
 
-//go:generate go run -mod=mod entgo.io/ent/cmd/ent generate --feature sql/execquery,sql/versioned-migration ./schema
+//go:generate go run -mod=mod entgo.io/ent/cmd/ent generate --feature sql/execquery,sql/upsert,sql/versioned-migration ./schema

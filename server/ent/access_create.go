@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/USA-RedDragon/rdio-scanner/server/ent/access"
@@ -18,6 +19,7 @@ type AccessCreate struct {
 	config
 	mutation *AccessMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetCode sets the "code" field.
@@ -162,6 +164,7 @@ func (_c *AccessCreate) createSpec() (*Access, *sqlgraph.CreateSpec) {
 		_node = &Access{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(access.Table, sqlgraph.NewFieldSpec(access.FieldID, field.TypeInt))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = id
@@ -193,11 +196,376 @@ func (_c *AccessCreate) createSpec() (*Access, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Access.Create().
+//		SetCode(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.AccessUpsert) {
+//			SetCode(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *AccessCreate) OnConflict(opts ...sql.ConflictOption) *AccessUpsertOne {
+	_c.conflict = opts
+	return &AccessUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Access.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *AccessCreate) OnConflictColumns(columns ...string) *AccessUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &AccessUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// AccessUpsertOne is the builder for "upsert"-ing
+	//  one Access node.
+	AccessUpsertOne struct {
+		create *AccessCreate
+	}
+
+	// AccessUpsert is the "OnConflict" setter.
+	AccessUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetCode sets the "code" field.
+func (u *AccessUpsert) SetCode(v string) *AccessUpsert {
+	u.Set(access.FieldCode, v)
+	return u
+}
+
+// UpdateCode sets the "code" field to the value that was provided on create.
+func (u *AccessUpsert) UpdateCode() *AccessUpsert {
+	u.SetExcluded(access.FieldCode)
+	return u
+}
+
+// SetExpiration sets the "expiration" field.
+func (u *AccessUpsert) SetExpiration(v time.Time) *AccessUpsert {
+	u.Set(access.FieldExpiration, v)
+	return u
+}
+
+// UpdateExpiration sets the "expiration" field to the value that was provided on create.
+func (u *AccessUpsert) UpdateExpiration() *AccessUpsert {
+	u.SetExcluded(access.FieldExpiration)
+	return u
+}
+
+// ClearExpiration clears the value of the "expiration" field.
+func (u *AccessUpsert) ClearExpiration() *AccessUpsert {
+	u.SetNull(access.FieldExpiration)
+	return u
+}
+
+// SetIdent sets the "ident" field.
+func (u *AccessUpsert) SetIdent(v string) *AccessUpsert {
+	u.Set(access.FieldIdent, v)
+	return u
+}
+
+// UpdateIdent sets the "ident" field to the value that was provided on create.
+func (u *AccessUpsert) UpdateIdent() *AccessUpsert {
+	u.SetExcluded(access.FieldIdent)
+	return u
+}
+
+// ClearIdent clears the value of the "ident" field.
+func (u *AccessUpsert) ClearIdent() *AccessUpsert {
+	u.SetNull(access.FieldIdent)
+	return u
+}
+
+// SetLimit sets the "limit" field.
+func (u *AccessUpsert) SetLimit(v int) *AccessUpsert {
+	u.Set(access.FieldLimit, v)
+	return u
+}
+
+// UpdateLimit sets the "limit" field to the value that was provided on create.
+func (u *AccessUpsert) UpdateLimit() *AccessUpsert {
+	u.SetExcluded(access.FieldLimit)
+	return u
+}
+
+// AddLimit adds v to the "limit" field.
+func (u *AccessUpsert) AddLimit(v int) *AccessUpsert {
+	u.Add(access.FieldLimit, v)
+	return u
+}
+
+// ClearLimit clears the value of the "limit" field.
+func (u *AccessUpsert) ClearLimit() *AccessUpsert {
+	u.SetNull(access.FieldLimit)
+	return u
+}
+
+// SetOrder sets the "order" field.
+func (u *AccessUpsert) SetOrder(v int) *AccessUpsert {
+	u.Set(access.FieldOrder, v)
+	return u
+}
+
+// UpdateOrder sets the "order" field to the value that was provided on create.
+func (u *AccessUpsert) UpdateOrder() *AccessUpsert {
+	u.SetExcluded(access.FieldOrder)
+	return u
+}
+
+// AddOrder adds v to the "order" field.
+func (u *AccessUpsert) AddOrder(v int) *AccessUpsert {
+	u.Add(access.FieldOrder, v)
+	return u
+}
+
+// ClearOrder clears the value of the "order" field.
+func (u *AccessUpsert) ClearOrder() *AccessUpsert {
+	u.SetNull(access.FieldOrder)
+	return u
+}
+
+// SetSystems sets the "systems" field.
+func (u *AccessUpsert) SetSystems(v string) *AccessUpsert {
+	u.Set(access.FieldSystems, v)
+	return u
+}
+
+// UpdateSystems sets the "systems" field to the value that was provided on create.
+func (u *AccessUpsert) UpdateSystems() *AccessUpsert {
+	u.SetExcluded(access.FieldSystems)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Access.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(access.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *AccessUpsertOne) UpdateNewValues() *AccessUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(access.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Access.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *AccessUpsertOne) Ignore() *AccessUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *AccessUpsertOne) DoNothing() *AccessUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the AccessCreate.OnConflict
+// documentation for more info.
+func (u *AccessUpsertOne) Update(set func(*AccessUpsert)) *AccessUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&AccessUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetCode sets the "code" field.
+func (u *AccessUpsertOne) SetCode(v string) *AccessUpsertOne {
+	return u.Update(func(s *AccessUpsert) {
+		s.SetCode(v)
+	})
+}
+
+// UpdateCode sets the "code" field to the value that was provided on create.
+func (u *AccessUpsertOne) UpdateCode() *AccessUpsertOne {
+	return u.Update(func(s *AccessUpsert) {
+		s.UpdateCode()
+	})
+}
+
+// SetExpiration sets the "expiration" field.
+func (u *AccessUpsertOne) SetExpiration(v time.Time) *AccessUpsertOne {
+	return u.Update(func(s *AccessUpsert) {
+		s.SetExpiration(v)
+	})
+}
+
+// UpdateExpiration sets the "expiration" field to the value that was provided on create.
+func (u *AccessUpsertOne) UpdateExpiration() *AccessUpsertOne {
+	return u.Update(func(s *AccessUpsert) {
+		s.UpdateExpiration()
+	})
+}
+
+// ClearExpiration clears the value of the "expiration" field.
+func (u *AccessUpsertOne) ClearExpiration() *AccessUpsertOne {
+	return u.Update(func(s *AccessUpsert) {
+		s.ClearExpiration()
+	})
+}
+
+// SetIdent sets the "ident" field.
+func (u *AccessUpsertOne) SetIdent(v string) *AccessUpsertOne {
+	return u.Update(func(s *AccessUpsert) {
+		s.SetIdent(v)
+	})
+}
+
+// UpdateIdent sets the "ident" field to the value that was provided on create.
+func (u *AccessUpsertOne) UpdateIdent() *AccessUpsertOne {
+	return u.Update(func(s *AccessUpsert) {
+		s.UpdateIdent()
+	})
+}
+
+// ClearIdent clears the value of the "ident" field.
+func (u *AccessUpsertOne) ClearIdent() *AccessUpsertOne {
+	return u.Update(func(s *AccessUpsert) {
+		s.ClearIdent()
+	})
+}
+
+// SetLimit sets the "limit" field.
+func (u *AccessUpsertOne) SetLimit(v int) *AccessUpsertOne {
+	return u.Update(func(s *AccessUpsert) {
+		s.SetLimit(v)
+	})
+}
+
+// AddLimit adds v to the "limit" field.
+func (u *AccessUpsertOne) AddLimit(v int) *AccessUpsertOne {
+	return u.Update(func(s *AccessUpsert) {
+		s.AddLimit(v)
+	})
+}
+
+// UpdateLimit sets the "limit" field to the value that was provided on create.
+func (u *AccessUpsertOne) UpdateLimit() *AccessUpsertOne {
+	return u.Update(func(s *AccessUpsert) {
+		s.UpdateLimit()
+	})
+}
+
+// ClearLimit clears the value of the "limit" field.
+func (u *AccessUpsertOne) ClearLimit() *AccessUpsertOne {
+	return u.Update(func(s *AccessUpsert) {
+		s.ClearLimit()
+	})
+}
+
+// SetOrder sets the "order" field.
+func (u *AccessUpsertOne) SetOrder(v int) *AccessUpsertOne {
+	return u.Update(func(s *AccessUpsert) {
+		s.SetOrder(v)
+	})
+}
+
+// AddOrder adds v to the "order" field.
+func (u *AccessUpsertOne) AddOrder(v int) *AccessUpsertOne {
+	return u.Update(func(s *AccessUpsert) {
+		s.AddOrder(v)
+	})
+}
+
+// UpdateOrder sets the "order" field to the value that was provided on create.
+func (u *AccessUpsertOne) UpdateOrder() *AccessUpsertOne {
+	return u.Update(func(s *AccessUpsert) {
+		s.UpdateOrder()
+	})
+}
+
+// ClearOrder clears the value of the "order" field.
+func (u *AccessUpsertOne) ClearOrder() *AccessUpsertOne {
+	return u.Update(func(s *AccessUpsert) {
+		s.ClearOrder()
+	})
+}
+
+// SetSystems sets the "systems" field.
+func (u *AccessUpsertOne) SetSystems(v string) *AccessUpsertOne {
+	return u.Update(func(s *AccessUpsert) {
+		s.SetSystems(v)
+	})
+}
+
+// UpdateSystems sets the "systems" field to the value that was provided on create.
+func (u *AccessUpsertOne) UpdateSystems() *AccessUpsertOne {
+	return u.Update(func(s *AccessUpsert) {
+		s.UpdateSystems()
+	})
+}
+
+// Exec executes the query.
+func (u *AccessUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for AccessCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *AccessUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *AccessUpsertOne) ID(ctx context.Context) (id int, err error) {
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *AccessUpsertOne) IDX(ctx context.Context) int {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // AccessCreateBulk is the builder for creating many Access entities in bulk.
 type AccessCreateBulk struct {
 	config
 	err      error
 	builders []*AccessCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Access entities in the database.
@@ -226,6 +594,7 @@ func (_c *AccessCreateBulk) Save(ctx context.Context) ([]*Access, error) {
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -276,6 +645,246 @@ func (_c *AccessCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *AccessCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Access.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.AccessUpsert) {
+//			SetCode(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *AccessCreateBulk) OnConflict(opts ...sql.ConflictOption) *AccessUpsertBulk {
+	_c.conflict = opts
+	return &AccessUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Access.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *AccessCreateBulk) OnConflictColumns(columns ...string) *AccessUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &AccessUpsertBulk{
+		create: _c,
+	}
+}
+
+// AccessUpsertBulk is the builder for "upsert"-ing
+// a bulk of Access nodes.
+type AccessUpsertBulk struct {
+	create *AccessCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Access.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(access.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *AccessUpsertBulk) UpdateNewValues() *AccessUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(access.FieldID)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Access.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *AccessUpsertBulk) Ignore() *AccessUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *AccessUpsertBulk) DoNothing() *AccessUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the AccessCreateBulk.OnConflict
+// documentation for more info.
+func (u *AccessUpsertBulk) Update(set func(*AccessUpsert)) *AccessUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&AccessUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetCode sets the "code" field.
+func (u *AccessUpsertBulk) SetCode(v string) *AccessUpsertBulk {
+	return u.Update(func(s *AccessUpsert) {
+		s.SetCode(v)
+	})
+}
+
+// UpdateCode sets the "code" field to the value that was provided on create.
+func (u *AccessUpsertBulk) UpdateCode() *AccessUpsertBulk {
+	return u.Update(func(s *AccessUpsert) {
+		s.UpdateCode()
+	})
+}
+
+// SetExpiration sets the "expiration" field.
+func (u *AccessUpsertBulk) SetExpiration(v time.Time) *AccessUpsertBulk {
+	return u.Update(func(s *AccessUpsert) {
+		s.SetExpiration(v)
+	})
+}
+
+// UpdateExpiration sets the "expiration" field to the value that was provided on create.
+func (u *AccessUpsertBulk) UpdateExpiration() *AccessUpsertBulk {
+	return u.Update(func(s *AccessUpsert) {
+		s.UpdateExpiration()
+	})
+}
+
+// ClearExpiration clears the value of the "expiration" field.
+func (u *AccessUpsertBulk) ClearExpiration() *AccessUpsertBulk {
+	return u.Update(func(s *AccessUpsert) {
+		s.ClearExpiration()
+	})
+}
+
+// SetIdent sets the "ident" field.
+func (u *AccessUpsertBulk) SetIdent(v string) *AccessUpsertBulk {
+	return u.Update(func(s *AccessUpsert) {
+		s.SetIdent(v)
+	})
+}
+
+// UpdateIdent sets the "ident" field to the value that was provided on create.
+func (u *AccessUpsertBulk) UpdateIdent() *AccessUpsertBulk {
+	return u.Update(func(s *AccessUpsert) {
+		s.UpdateIdent()
+	})
+}
+
+// ClearIdent clears the value of the "ident" field.
+func (u *AccessUpsertBulk) ClearIdent() *AccessUpsertBulk {
+	return u.Update(func(s *AccessUpsert) {
+		s.ClearIdent()
+	})
+}
+
+// SetLimit sets the "limit" field.
+func (u *AccessUpsertBulk) SetLimit(v int) *AccessUpsertBulk {
+	return u.Update(func(s *AccessUpsert) {
+		s.SetLimit(v)
+	})
+}
+
+// AddLimit adds v to the "limit" field.
+func (u *AccessUpsertBulk) AddLimit(v int) *AccessUpsertBulk {
+	return u.Update(func(s *AccessUpsert) {
+		s.AddLimit(v)
+	})
+}
+
+// UpdateLimit sets the "limit" field to the value that was provided on create.
+func (u *AccessUpsertBulk) UpdateLimit() *AccessUpsertBulk {
+	return u.Update(func(s *AccessUpsert) {
+		s.UpdateLimit()
+	})
+}
+
+// ClearLimit clears the value of the "limit" field.
+func (u *AccessUpsertBulk) ClearLimit() *AccessUpsertBulk {
+	return u.Update(func(s *AccessUpsert) {
+		s.ClearLimit()
+	})
+}
+
+// SetOrder sets the "order" field.
+func (u *AccessUpsertBulk) SetOrder(v int) *AccessUpsertBulk {
+	return u.Update(func(s *AccessUpsert) {
+		s.SetOrder(v)
+	})
+}
+
+// AddOrder adds v to the "order" field.
+func (u *AccessUpsertBulk) AddOrder(v int) *AccessUpsertBulk {
+	return u.Update(func(s *AccessUpsert) {
+		s.AddOrder(v)
+	})
+}
+
+// UpdateOrder sets the "order" field to the value that was provided on create.
+func (u *AccessUpsertBulk) UpdateOrder() *AccessUpsertBulk {
+	return u.Update(func(s *AccessUpsert) {
+		s.UpdateOrder()
+	})
+}
+
+// ClearOrder clears the value of the "order" field.
+func (u *AccessUpsertBulk) ClearOrder() *AccessUpsertBulk {
+	return u.Update(func(s *AccessUpsert) {
+		s.ClearOrder()
+	})
+}
+
+// SetSystems sets the "systems" field.
+func (u *AccessUpsertBulk) SetSystems(v string) *AccessUpsertBulk {
+	return u.Update(func(s *AccessUpsert) {
+		s.SetSystems(v)
+	})
+}
+
+// UpdateSystems sets the "systems" field to the value that was provided on create.
+func (u *AccessUpsertBulk) UpdateSystems() *AccessUpsertBulk {
+	return u.Update(func(s *AccessUpsert) {
+		s.UpdateSystems()
+	})
+}
+
+// Exec executes the query.
+func (u *AccessUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the AccessCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for AccessCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *AccessUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
