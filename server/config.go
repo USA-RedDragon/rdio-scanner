@@ -77,7 +77,7 @@ func NewConfig() *Config {
 		config        = &Config{}
 		configSave    = flag.Bool("config_save", false, fmt.Sprintf("save configuration to %s", defaultConfigFile))
 		serviceAction = flag.String("service", "", "service command, one of start, stop, restart, install, uninstall")
-		version       = flag.Bool("version", false, "show application version")
+		showVersion   = flag.Bool("version", false, "show application version")
 	)
 
 	defaultDbType := os.Getenv("DB_TYPE")
@@ -181,7 +181,7 @@ func NewConfig() *Config {
 			os.Exit(-1)
 		}
 
-	case *version:
+	case *showVersion:
 		fmt.Printf("Version %s Commit %s", version, commit)
 		os.Exit(0)
 
