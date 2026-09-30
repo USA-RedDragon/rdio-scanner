@@ -141,7 +141,6 @@ func TestLogsSearch(t *testing.T) {
 // DateStop must be the newest matching log; the "max" query sorts ascending,
 // so it always equals DateStart.
 func TestLogsSearchDateStop(t *testing.T) {
-	t.Skip("known bug: logs Search max-date query sorts asc so DateStop == DateStart; fixed during ent migration")
 
 	forEachDatabase(t, func(t *testing.T, db *Database) {
 		f := logFourEvents(t, db)
@@ -161,7 +160,6 @@ func TestLogsSearchDateStop(t *testing.T) {
 // do). Logs subtracts the minute-of-hour a second time, so the window ends
 // 2*minute minutes early and misses the most recent entries.
 func TestLogsSearchDateDescending(t *testing.T) {
-	t.Skip("known bug: logs Search descending date window is shifted back by 2x the minute-of-hour; fixed during ent migration")
 
 	forEachDatabase(t, func(t *testing.T, db *Database) {
 		f := logFourEvents(t, db)
@@ -192,7 +190,6 @@ func TestLogsPrune(t *testing.T) {
 
 // Same as TestCallsPruneIsTimeZoneIndependent, for logs.
 func TestLogsPruneIsTimeZoneIndependent(t *testing.T) {
-	t.Skip("known bug: Prune cutoff uses local wall-clock time against UTC-stored dateTime; fixed during ent migration")
 
 	withLocalZone(t, time.FixedZone("UTC-5", -5*3600))
 	forEachDatabase(t, func(t *testing.T, db *Database) {

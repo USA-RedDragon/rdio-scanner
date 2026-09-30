@@ -16,12 +16,15 @@
 package main
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
 	"log"
-	"math"
 	"sync"
 	"time"
+
+	"github.com/USA-RedDragon/rdio-scanner/server/ent"
+	entlogentry "github.com/USA-RedDragon/rdio-scanner/server/ent/logentry"
+	"github.com/USA-RedDragon/rdio-scanner/server/ent/predicate"
 )
 
 const (
@@ -74,12 +77,8 @@ func (logs *Logs) LogEvent(level string, message string) error {
 			Message:  message,
 		}
 
-		q := "insert into `rdioscannerlogs` (`dateTime`, `level`, `message`) values (?, ?, ?)"
-		if logs.database.Config.DbType == DbTypePostgresql {
-			q = "insert into rdioscannerlogs (dateTime, level, message) values ($1, $2, $3)"
-		}
-		if _, err := logs.database.Sql.Exec(q, l.DateTime, l.Level, l.Message); err != nil {
-			return fmt.Errorf("logs.logevent: %v", err)
+		if err := logs.database.Ent.LogEntry.Create().SetDateTime(l.DateTime).SetLevel(l.Level).SetMessage(l.Message).Exec(context.Background()); err != nil {
+			return fmt.Errorf("logs.logevent: %w", err)
 		}
 	}
 
@@ -90,39 +89,25 @@ func (logs *Logs) Prune(db *Database, pruneDays uint) error {
 	logs.mutex.Lock()
 	defer logs.mutex.Unlock()
 
-	date := time.Now().Add(-24 * time.Hour * time.Duration(pruneDays)).Format(db.DateTimeFormat)
-	q := "delete from `rdioscannerlogs` where `dateTime` < ?"
-	if db.Config.DbType == DbTypePostgresql {
-		q = "delete from rdioscannerlogs where dateTime < $1"
-	}
-	_, err := db.Sql.Exec(q, date)
+	cutoff := time.Now().UTC().Add(-24 * time.Hour * time.Duration(pruneDays))
+	_, err := db.Ent.LogEntry.Delete().Where(entlogentry.DateTimeLT(cutoff)).Exec(context.Background())
 
 	return err
 }
 
 func (logs *Logs) Search(searchOptions *LogsSearchOptions, db *Database) (*LogsSearchResults, error) {
 	const (
-		ascOrder  = "asc"
-		descOrder = "desc"
+		ascOrder  = 1
+		descOrder = -1
 	)
 
-	var (
-		dateTime any
-		err      error
-		id       sql.NullFloat64
-		limit    uint
-		offset   uint
-		order    string
-		query    string
-		rows     *sql.Rows
-		where    string = "true"
-	)
+	ctx := context.Background()
 
 	logs.mutex.Lock()
 	defer logs.mutex.Unlock()
 
 	formatError := func(err error) error {
-		return fmt.Errorf("logs.search: %v", err)
+		return fmt.Errorf("logs.search: %w", err)
 	}
 
 	logResults := &LogsSearchResults{
@@ -130,126 +115,81 @@ func (logs *Logs) Search(searchOptions *LogsSearchOptions, db *Database) (*LogsS
 		Logs:    []Log{},
 	}
 
-	switch v := searchOptions.Level.(type) {
-	case string:
-		if db.Config.DbType == DbTypePostgresql {
-			where += fmt.Sprintf(" and level = '%v'", v)
+	sort := ascOrder
+	if v, ok := searchOptions.Sort.(int); ok && v < 0 {
+		sort = descOrder
+	}
+
+	preds := []predicate.LogEntry{}
+
+	if level, ok := searchOptions.Level.(string); ok {
+		preds = append(preds, entlogentry.Level(level))
+	}
+
+	if v, ok := searchOptions.Date.(time.Time); ok {
+		minute := v.UTC().Truncate(time.Minute)
+		var start, stop time.Time
+		if sort == ascOrder {
+			// 24h window starting at the selected minute.
+			start = minute
+			stop = minute.Add(24 * time.Hour)
 		} else {
-			where += fmt.Sprintf(" and `level` = '%v'", v)
+			// 24h window ending at the end of the selected minute.
+			stop = minute.Add(time.Minute)
+			start = stop.Add(-24 * time.Hour)
 		}
+		preds = append(preds, entlogentry.DateTimeGTE(start), entlogentry.DateTimeLT(stop))
 	}
 
-	switch v := searchOptions.Sort.(type) {
-	case int:
-		if v < 0 {
-			order = descOrder
+	limit := 200
+	if v, ok := searchOptions.Limit.(uint); ok {
+		if v > 500 {
+			limit = 500
 		} else {
-			order = ascOrder
-		}
-	default:
-		order = ascOrder
-	}
-
-	switch v := searchOptions.Date.(type) {
-	case time.Time:
-		var (
-			df    string = db.DateTimeFormat
-			start time.Time
-			stop  time.Time
-		)
-
-		if order == ascOrder {
-			start = time.Date(v.Year(), v.Month(), v.Day(), v.Hour(), v.Minute(), 0, 0, time.UTC)
-			stop = start.Add(time.Hour*24 - time.Millisecond)
-
-		} else {
-			start = time.Date(v.Year(), v.Month(), v.Day(), v.Hour(), v.Minute(), 0, 0, time.UTC).Add(time.Hour*-24 - time.Duration(v.Hour())).Add(time.Minute * time.Duration(-v.Minute()))
-			stop = start.Add(time.Hour*24 - time.Millisecond - time.Duration(v.Hour())).Add(time.Minute * time.Duration(-v.Minute()))
-		}
-
-		if db.Config.DbType == DbTypePostgresql {
-			where += fmt.Sprintf(" and (dateTime between '%v' and '%v')", start.Format(df), stop.Format(df))
-		} else {
-			where += fmt.Sprintf(" and (`dateTime` between '%v' and '%v')", start.Format(df), stop.Format(df))
+			limit = int(v)
 		}
 	}
 
-	switch v := searchOptions.Limit.(type) {
-	case uint:
-		limit = uint(math.Min(float64(500), float64(v)))
-	default:
-		limit = 200
+	offset := 0
+	if v, ok := searchOptions.Offset.(uint); ok {
+		offset = int(v)
 	}
 
-	switch v := searchOptions.Offset.(type) {
-	case uint:
-		offset = v
-	}
-
-	query = fmt.Sprintf("select `dateTime` from `rdioscannerlogs` where %v order by `dateTime` asc", where)
-	if db.Config.DbType == DbTypePostgresql {
-		query = fmt.Sprintf("select dateTime from rdioscannerlogs where %v order by dateTime asc", where)
-	}
-	if err = db.Sql.QueryRow(query).Scan(&dateTime); err != nil && err != sql.ErrNoRows {
-		return nil, formatError(fmt.Errorf("%v, %v", err, query))
-	}
-
-	if t, err := db.ParseDateTime(dateTime); err == nil {
-		logResults.DateStart = t
-	}
-
-	query = fmt.Sprintf("select `dateTime` from `rdioscannerlogs` where %v order by `dateTime` asc", where)
-	if db.Config.DbType == DbTypePostgresql {
-		query = fmt.Sprintf("select dateTime from rdioscannerlogs where %v order by dateTime asc", where)
-	}
-	if err = db.Sql.QueryRow(query).Scan(&dateTime); err != nil && err != sql.ErrNoRows {
-		return nil, formatError(fmt.Errorf("%v, %v", err, query))
-	}
-
-	if t, err := db.ParseDateTime(dateTime); err == nil {
-		logResults.DateStop = t
-	}
-
-	query = fmt.Sprintf("select count(*) from `rdioscannerlogs` where %v", where)
-	if db.Config.DbType == DbTypePostgresql {
-		query = fmt.Sprintf("select count(*) from rdioscannerlogs where %v", where)
-	}
-	if err = db.Sql.QueryRow(query).Scan(&logResults.Count); err != nil && err != sql.ErrNoRows {
-		return nil, formatError(fmt.Errorf("%v, %v", err, query))
-	}
-
-	query = fmt.Sprintf("select `_id`, `DateTime`, `level`, `message` from `rdioscannerlogs` where %v order by `dateTime` %v limit %v offset %v", where, order, limit, offset)
-	if db.Config.DbType == DbTypePostgresql {
-		query = fmt.Sprintf("select _id, dateTime, level, message from rdioscannerlogs where %v order by dateTime %v limit %v offset %v", where, order, limit, offset)
-	}
-	if rows, err = db.Sql.Query(query); err != nil && err != sql.ErrNoRows {
-		return nil, formatError(fmt.Errorf("%v, %v", err, query))
-	}
-
-	for rows.Next() {
-		log := Log{}
-
-		if err = rows.Scan(&id, &dateTime, &log.Level, &log.Message); err != nil {
-			break
-		}
-
-		if id.Valid && id.Float64 > 0 {
-			log.Id = uint(id.Float64)
-		}
-
-		if t, err := db.ParseDateTime(dateTime); err == nil {
-			log.DateTime = t
-		} else {
-			continue
-		}
-
-		logResults.Logs = append(logResults.Logs, log)
-	}
-
-	rows.Close()
-
+	count, err := db.Ent.LogEntry.Query().Where(preds...).Count(ctx)
 	if err != nil {
 		return nil, formatError(err)
+	}
+	logResults.Count = uint(count)
+
+	if first, err := db.Ent.LogEntry.Query().Where(preds...).Order(ent.Asc(entlogentry.FieldDateTime)).First(ctx); err == nil {
+		logResults.DateStart = first.DateTime.UTC()
+	} else if !ent.IsNotFound(err) {
+		return nil, formatError(err)
+	}
+
+	if last, err := db.Ent.LogEntry.Query().Where(preds...).Order(ent.Desc(entlogentry.FieldDateTime)).First(ctx); err == nil {
+		logResults.DateStop = last.DateTime.UTC()
+	} else if !ent.IsNotFound(err) {
+		return nil, formatError(err)
+	}
+
+	order := ent.Asc(entlogentry.FieldDateTime)
+	if sort == descOrder {
+		order = ent.Desc(entlogentry.FieldDateTime)
+	}
+
+	records, err := db.Ent.LogEntry.Query().Where(preds...).Order(order).Limit(limit).Offset(offset).All(ctx)
+	if err != nil {
+		return nil, formatError(err)
+	}
+
+	for _, r := range records {
+		logResults.Logs = append(logResults.Logs, Log{
+			Id:       uint(r.ID),
+			DateTime: r.DateTime.UTC(),
+			Level:    r.Level,
+			Message:  r.Message,
+		})
 	}
 
 	return logResults, nil
