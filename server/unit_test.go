@@ -89,7 +89,6 @@ func TestUnitsReadWrite(t *testing.T) {
 func TestUnitsUpdate(t *testing.T) {
 	forEachDatabase(t, func(t *testing.T, db *Database) {
 		if db.Config.DbType == DbTypePostgresql {
-			t.Skip("known bug: postgres unit update uses unquoted order column (syntax error); fixed during ent migration")
 		}
 
 		systems := writeSystemsWithUnits(t, db)
@@ -120,7 +119,6 @@ func TestUnitsUpdate(t *testing.T) {
 func TestUnitsMergeThenWrite(t *testing.T) {
 	forEachDatabase(t, func(t *testing.T, db *Database) {
 		if db.Config.DbType == DbTypePostgresql {
-			t.Skip("known bug: postgres unit update uses unquoted order column (syntax error); fixed during ent migration")
 		}
 
 		systems := writeSystemsWithUnits(t, db)

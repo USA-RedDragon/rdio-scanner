@@ -16,13 +16,16 @@
 package main
 
 import (
-	"database/sql"
-	"encoding/json"
+	"context"
 	"fmt"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
+
+	entsystem "github.com/USA-RedDragon/rdio-scanner/server/ent/system"
+	enttalkgroup "github.com/USA-RedDragon/rdio-scanner/server/ent/talkgroup"
+	entunit "github.com/USA-RedDragon/rdio-scanner/server/ent/unit"
 )
 
 type System struct {
@@ -321,58 +324,38 @@ func (systems *Systems) GetScopedSystems(client *Client, groups *Groups, tags *T
 }
 
 func (systems *Systems) Read(db *Database) error {
-	var (
-		blacklists sql.NullString
-		err        error
-		led        sql.NullString
-		order      sql.NullFloat64
-		rowId      sql.NullFloat64
-		rows       *sql.Rows
-	)
-
 	systems.mutex.Lock()
 	defer systems.mutex.Unlock()
 
 	systems.List = []*System{}
 
-	formatError := func(err error) error {
-		return fmt.Errorf("systems.read: %v", err)
+	records, err := db.Ent.System.Query().All(context.Background())
+	if err != nil {
+		return fmt.Errorf("systems.read: %w", err)
 	}
 
-	q := "select `_id`, `autoPopulate`, `blacklists`, `id`, `label`, `led`, `order` from `rdioscannersystems`"
-	if db.Config.DbType == DbTypePostgresql {
-		q = "select _id, autoPopulate, blacklists, id, label, led, \"order\" from rdioscannersystems"
-	}
-	if rows, err = db.Sql.Query(q); err != nil {
-		return formatError(err)
-	}
-
-	for rows.Next() {
+	for _, r := range records {
 		system := &System{
-			Talkgroups: NewTalkgroups(),
-			Units:      NewUnits(),
+			Id:           uint(r.SystemID),
+			Label:        r.Label,
+			RowId:        uint(r.ID),
+			Talkgroups:   NewTalkgroups(),
+			Units:        NewUnits(),
+			AutoPopulate: r.AutoPopulate != nil && *r.AutoPopulate,
 		}
 
-		if err = rows.Scan(&rowId, &system.AutoPopulate, &blacklists, &system.Id, &system.Label, &led, &order); err != nil {
-			break
+		if len(r.Blacklists) > 0 {
+			inner := strings.ReplaceAll(r.Blacklists, "[", "")
+			inner = strings.ReplaceAll(inner, "]", "")
+			system.Blacklists = Blacklists(inner)
 		}
 
-		if rowId.Valid && rowId.Float64 > 0 {
-			system.RowId = uint(rowId.Float64)
+		if r.Led != nil && len(*r.Led) > 0 {
+			system.Led = *r.Led
 		}
 
-		if blacklists.Valid && len(blacklists.String) > 0 {
-			blacklists.String = strings.ReplaceAll(blacklists.String, "[", "")
-			blacklists.String = strings.ReplaceAll(blacklists.String, "]", "")
-			system.Blacklists = Blacklists(blacklists.String)
-		}
-
-		if led.Valid && len(led.String) > 0 {
-			system.Led = led.String
-		}
-
-		if order.Valid && order.Float64 > 0 {
-			system.Order = uint(order.Float64)
+		if r.Order != nil && *r.Order > 0 {
+			system.Order = uint(*r.Order)
 		}
 
 		if err = system.Talkgroups.Read(db, system.Id); err != nil {
@@ -386,141 +369,86 @@ func (systems *Systems) Read(db *Database) error {
 		systems.List = append(systems.List, system)
 	}
 
-	rows.Close()
-
-	if err != nil {
-		return formatError(err)
-	}
-
 	sort.Slice(systems.List, func(i int, j int) bool {
 		return systems.List[i].Order < systems.List[j].Order
 	})
 
 	return nil
 }
-
 func (systems *Systems) Write(db *Database) error {
-	var (
-		blacklists string
-		count      uint
-		err        error
-		rows       *sql.Rows
-		rowIds     = []uint{}
-		systemIds  = []uint{}
-	)
-
 	systems.mutex.Lock()
 	defer systems.mutex.Unlock()
 
+	ctx := context.Background()
+
 	formatError := func(err error) error {
-		return fmt.Errorf("systems.write: %v", err)
+		return fmt.Errorf("systems.write: %w", err)
 	}
 
-	q := "select `_id`, `id` from `rdioscannersystems`"
-	if db.Config.DbType == DbTypePostgresql {
-		q = "select _id, id from rdioscannersystems"
-	}
-	if rows, err = db.Sql.Query(q); err != nil {
-		return formatError(err)
-	}
-
-	for rows.Next() {
-		var rowId uint
-		var systemId uint
-		if err = rows.Scan(&rowId, &systemId); err != nil {
-			break
-		}
-		remove := true
-		for _, system := range systems.List {
-			if system.RowId == nil || (system.RowId == rowId && system.Id == systemId) {
-				remove = false
-				break
-			}
-		}
-		if remove {
-			rowIds = append(rowIds, rowId)
-			systemIds = append(systemIds, systemId)
+	// Ids (row _id) still present, and the natural system ids being removed so
+	// their talkgroups and units can be cascaded.
+	keep := make([]int, 0, len(systems.List))
+	for _, system := range systems.List {
+		if id, ok := rowID(system.RowId); ok {
+			keep = append(keep, id)
 		}
 	}
 
-	rows.Close()
-
+	existing, err := db.Ent.System.Query().All(ctx)
 	if err != nil {
 		return formatError(err)
 	}
-
-	if len(rowIds) > 0 {
-		if b, err := json.Marshal(rowIds); err == nil {
-			s := string(b)
-			s = strings.ReplaceAll(s, "[", "(")
-			s = strings.ReplaceAll(s, "]", ")")
-			q := fmt.Sprintf("delete from `rdioscannersystems` where `_id` in %v", s)
-			if db.Config.DbType == DbTypePostgresql {
-				q = fmt.Sprintf("delete from rdioscannersystems where _id in %v", s)
-			}
-			if _, err = db.Sql.Exec(q); err != nil {
-				return formatError(err)
-			}
+	keepSet := make(map[int]bool, len(keep))
+	for _, id := range keep {
+		keepSet[id] = true
+	}
+	removedSystemIds := []int{}
+	for _, r := range existing {
+		if !keepSet[r.ID] {
+			removedSystemIds = append(removedSystemIds, r.SystemID)
 		}
 	}
 
-	if len(systemIds) > 0 {
-		if b, err := json.Marshal(systemIds); err == nil {
-			s := string(b)
-			s = strings.ReplaceAll(s, "[", "(")
-			s = strings.ReplaceAll(s, "]", ")")
-			q := fmt.Sprintf("delete from `rdioscannertalkgroups` where `systemId` in %v", s)
-			if db.Config.DbType == DbTypePostgresql {
-				q = fmt.Sprintf("delete from rdioscannertalkgroups where systemId in %v", s)
-			}
-			if _, err = db.Sql.Exec(q); err != nil {
-				return formatError(err)
-			}
-			q = fmt.Sprintf("delete from `rdioscannerunits` where `systemId` in %v", s)
-			if db.Config.DbType == DbTypePostgresql {
-				q = fmt.Sprintf("delete from rdioscannerunits where systemId in %v", s)
-			}
-			if _, err = db.Sql.Exec(q); err != nil {
-				return formatError(err)
-			}
+	if len(removedSystemIds) > 0 {
+		if _, err = db.Ent.Talkgroup.Delete().Where(enttalkgroup.SystemIDIn(removedSystemIds...)).Exec(ctx); err != nil {
+			return formatError(err)
 		}
+		if _, err = db.Ent.Unit.Delete().Where(entunit.SystemIDIn(removedSystemIds...)).Exec(ctx); err != nil {
+			return formatError(err)
+		}
+	}
+
+	if _, err = db.Ent.System.Delete().Where(entsystem.IDNotIn(keep...)).Exec(ctx); err != nil {
+		return formatError(err)
 	}
 
 	for _, system := range systems.List {
+		blacklists := "[]"
 		if len(system.Blacklists) > 0 {
-			blacklists = strings.Join([]string{"[", system.Blacklists.String(), "]"}, "")
-		} else {
-			blacklists = "[]"
+			blacklists = "[" + system.Blacklists.String() + "]"
 		}
 
-		q = "select count(*) from `rdioscannersystems` where `_id` = ?"
-		if db.Config.DbType == DbTypePostgresql {
-			q = "select count(*) from rdioscannersystems where _id = $1"
-		}
-		if err = db.Sql.QueryRow(q, system.RowId).Scan(&count); err != nil {
-			break
-		}
-
-		if count == 0 {
-			if db.Config.DbType == DbTypePostgresql {
-				q = "insert into rdioscannersystems (autoPopulate, blacklists, id, label, led, \"order\") values ($1, $2, $3, $4, $5, $6)"
-				if _, err = db.Sql.Exec(q, system.AutoPopulate, blacklists, system.Id, system.Label, system.Led, system.Order); err != nil {
-					break
-				}
-			} else {
-				q = "insert into `rdioscannersystems` (`_id`, `autoPopulate`, `blacklists`, `id`, `label`, `led`, `order`) values (?, ?, ?, ?, ?, ?, ?)"
-				if _, err = db.Sql.Exec(q, system.RowId, system.AutoPopulate, blacklists, system.Id, system.Label, system.Led, system.Order); err != nil {
-					break
-				}
+		if id, ok := rowID(system.RowId); ok {
+			upd := db.Ent.System.UpdateOneID(id).
+				SetSystemID(int(system.Id)).
+				SetAutoPopulate(system.AutoPopulate).
+				SetBlacklists(blacklists).
+				SetLabel(system.Label)
+			setOrClearStr(upd.SetLed, upd.ClearLed, nillableStr(system.Led))
+			setOrClearInt(upd.SetOrder, upd.ClearOrder, nillablePosInt(system.Order))
+			if err = upd.Exec(ctx); err != nil {
+				return formatError(err)
 			}
-
 		} else {
-			q = "update `rdioscannersystems` set `_id` = ?, `autoPopulate` = ?, `blacklists` = ?, `id` = ?, `label` = ?, `led` = ?, `order` = ? where `_id` = ?"
-			if db.Config.DbType == DbTypePostgresql {
-				q = "update rdioscannersystems set _id = $1, autoPopulate = $2, blacklists = $3, id = $4, label = $5, led = $6, \"order\" = $7 where _id = $8"
-			}
-			if _, err = db.Sql.Exec(q, system.RowId, system.AutoPopulate, blacklists, system.Id, system.Label, system.Led, system.Order, system.RowId); err != nil {
-				break
+			if err = db.Ent.System.Create().
+				SetSystemID(int(system.Id)).
+				SetAutoPopulate(system.AutoPopulate).
+				SetBlacklists(blacklists).
+				SetLabel(system.Label).
+				SetNillableLed(nillableStr(system.Led)).
+				SetNillableOrder(nillablePosInt(system.Order)).
+				Exec(ctx); err != nil {
+				return formatError(err)
 			}
 		}
 
@@ -531,10 +459,6 @@ func (systems *Systems) Write(db *Database) error {
 		if err = system.Units.Write(db, system.Id); err != nil {
 			return err
 		}
-	}
-
-	if err != nil {
-		return formatError(err)
 	}
 
 	return nil

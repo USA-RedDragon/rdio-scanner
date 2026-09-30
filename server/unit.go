@@ -16,12 +16,12 @@
 package main
 
 import (
-	"database/sql"
-	"encoding/json"
+	"context"
 	"fmt"
 	"sort"
-	"strings"
 	"sync"
+
+	entunit "github.com/USA-RedDragon/rdio-scanner/server/ent/unit"
 )
 
 type Unit struct {
@@ -114,42 +114,22 @@ func (u *Units) Merge(units *Units) bool {
 }
 
 func (units *Units) Read(db *Database, systemId uint) error {
-	var (
-		err  error
-		rows *sql.Rows
-	)
-
 	units.mutex.Lock()
 	defer units.mutex.Unlock()
 
 	units.List = []*Unit{}
 
-	formatError := func(err error) error {
-		return fmt.Errorf("units.read: %v", err)
-	}
-
-	q := "select `id`, `label`, `order` from `rdioscannerunits` where `systemId` = ?"
-	if db.Config.DbType == DbTypePostgresql {
-		q = "select id, label, \"order\" from rdioscannerunits where systemId = $1"
-	}
-	if rows, err = db.Sql.Query(q, systemId); err != nil {
-		return formatError(err)
-	}
-
-	for rows.Next() {
-		unit := &Unit{}
-
-		if err = rows.Scan(&unit.Id, &unit.Label, &unit.Order); err != nil {
-			break
-		}
-
-		units.List = append(units.List, unit)
-	}
-
-	rows.Close()
-
+	records, err := db.Ent.Unit.Query().Where(entunit.SystemID(int(systemId))).All(context.Background())
 	if err != nil {
-		return formatError(err)
+		return fmt.Errorf("units.read: %w", err)
+	}
+
+	for _, r := range records {
+		unit := &Unit{Id: uint(r.UnitID), Label: r.Label}
+		if r.Order != nil && *r.Order > 0 {
+			unit.Order = uint(*r.Order)
+		}
+		units.List = append(units.List, unit)
 	}
 
 	sort.Slice(units.List, func(i int, j int) bool {
@@ -158,99 +138,47 @@ func (units *Units) Read(db *Database, systemId uint) error {
 
 	return nil
 }
-
 func (units *Units) Write(db *Database, systemId uint) error {
-	var (
-		count uint
-		err   error
-		ids   = []uint{}
-		rows  *sql.Rows
-	)
-
 	units.mutex.Lock()
 	defer units.mutex.Unlock()
 
+	ctx := context.Background()
+	sysId := int(systemId)
+
 	formatError := func(err error) error {
-		return fmt.Errorf("units.write: %v", err)
+		return fmt.Errorf("units.write: %w", err)
 	}
 
-	q := "select `id` from `rdioscannerunits` where `systemId` = ?"
-	if db.Config.DbType == DbTypePostgresql {
-		q = "select id from rdioscannerunits where systemId = $1"
+	keep := make([]int, 0, len(units.List))
+	for _, unit := range units.List {
+		keep = append(keep, int(unit.Id))
 	}
-	if rows, err = db.Sql.Query(q, systemId); err != nil {
+
+	if _, err := db.Ent.Unit.Delete().Where(entunit.SystemID(sysId), entunit.UnitIDNotIn(keep...)).Exec(ctx); err != nil {
 		return formatError(err)
-	}
-
-	for rows.Next() {
-		var id uint
-		if err = rows.Scan(&id); err != nil {
-			break
-		}
-		remove := true
-		for _, unit := range units.List {
-			if unit.Id == id {
-				remove = false
-				break
-			}
-		}
-		if remove {
-			ids = append(ids, id)
-		}
-	}
-
-	rows.Close()
-
-	if err != nil {
-		return formatError(err)
-	}
-
-	if len(ids) > 0 {
-		if b, err := json.Marshal(ids); err == nil {
-			s := string(b)
-			s = strings.ReplaceAll(s, "[", "(")
-			s = strings.ReplaceAll(s, "]", ")")
-			q := fmt.Sprintf("delete from `rdioscannerunits` where `id` in %v and `systemId` = %v", s, systemId)
-			if db.Config.DbType == DbTypePostgresql {
-				q = fmt.Sprintf("delete from rdioscannerunits where id in %v and systemId = %v", s, systemId)
-			}
-			if _, err = db.Sql.Exec(q); err != nil {
-				return formatError(err)
-			}
-		}
 	}
 
 	for _, unit := range units.List {
-		q = "select count(*) from `rdioscannerunits` where `id` = ? and `systemId` = ?"
-		if db.Config.DbType == DbTypePostgresql {
-			q = "select count(*) from rdioscannerunits where id = $1 and systemId = $2"
+		exists, err := db.Ent.Unit.Query().Where(entunit.SystemID(sysId), entunit.UnitID(int(unit.Id))).Exist(ctx)
+		if err != nil {
+			return formatError(err)
 		}
-		if err = db.Sql.QueryRow(q, unit.Id, systemId).Scan(&count); err != nil {
-			break
-		}
-
-		if count == 0 {
-			q = "insert into `rdioscannerunits` (`id`, `label`, `order`, `systemId`) values (?, ?, ?, ?)"
-			if db.Config.DbType == DbTypePostgresql {
-				q = "insert into rdioscannerunits (id, label, \"order\", systemId) values ($1, $2, $3, $4)"
+		if exists {
+			upd := db.Ent.Unit.Update().Where(entunit.SystemID(sysId), entunit.UnitID(int(unit.Id))).SetLabel(unit.Label)
+			setOrClearInt(upd.SetOrder, upd.ClearOrder, nillablePosInt(unit.Order))
+			if _, err := upd.Save(ctx); err != nil {
+				return formatError(err)
 			}
-			if _, err = db.Sql.Exec(q, unit.Id, unit.Label, unit.Order, systemId); err != nil {
-				break
-			}
-
 		} else {
-			q = "update `rdioscannerunits` set `label` = ?, `order` = ? where `id` = ? and `systemId` = ?"
-			if db.Config.DbType == DbTypePostgresql {
-				q = "update rdioscannerunits set label = $1, order = $2 where id = $3 and systemId = $4"
-			}
-			if _, err = db.Sql.Exec(q, unit.Label, unit.Order, unit.Id, systemId); err != nil {
-				break
+			if err := db.Ent.Unit.Create().
+				SetUnitID(int(unit.Id)).
+				SetLabel(unit.Label).
+				SetSystemID(sysId).
+				SetNillableOrder(nillablePosInt(unit.Order)).
+				Exec(ctx); err != nil {
+				return formatError(err)
 			}
 		}
-	}
-
-	if err != nil {
-		return formatError(err)
 	}
 
 	return nil

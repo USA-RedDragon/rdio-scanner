@@ -16,12 +16,12 @@
 package main
 
 import (
-	"database/sql"
-	"encoding/json"
+	"context"
 	"fmt"
 	"sort"
-	"strings"
 	"sync"
+
+	enttalkgroup "github.com/USA-RedDragon/rdio-scanner/server/ent/talkgroup"
 )
 
 type Talkgroup struct {
@@ -146,52 +146,35 @@ func (talkgroups *Talkgroups) GetTalkgroup(f any) (system *Talkgroup, ok bool) {
 }
 
 func (talkgroups *Talkgroups) Read(db *Database, systemId uint) error {
-	var (
-		err       error
-		frequency sql.NullFloat64
-		led       sql.NullString
-		rows      *sql.Rows
-	)
-
 	talkgroups.mutex.Lock()
 	defer talkgroups.mutex.Unlock()
 
 	talkgroups.List = []*Talkgroup{}
 
-	formatError := func(err error) error {
-		return fmt.Errorf("talkgroups.read: %v", err)
-	}
-
-	q := "select `frequency`, `groupId`, `id`, `label`, `led`, `name`, `order`, `tagId` from `rdioscannertalkgroups` where `systemId` = ?"
-	if db.Config.DbType == DbTypePostgresql {
-		q = "select frequency, groupId, id, label, led, name, \"order\", tagId from rdioscannertalkgroups where systemId = $1"
-	}
-	if rows, err = db.Sql.Query(q, systemId); err != nil {
-		return formatError(err)
-	}
-
-	for rows.Next() {
-		talkgroup := &Talkgroup{}
-
-		if err = rows.Scan(&frequency, &talkgroup.GroupId, &talkgroup.Id, &talkgroup.Label, &led, &talkgroup.Name, &talkgroup.Order, &talkgroup.TagId); err != nil {
-			break
-		}
-
-		if frequency.Valid && frequency.Float64 > 0 {
-			talkgroup.Frequency = uint(frequency.Float64)
-		}
-
-		if led.Valid && len(led.String) > 0 {
-			talkgroup.Led = led.String
-		}
-
-		talkgroups.List = append(talkgroups.List, talkgroup)
-	}
-
-	rows.Close()
-
+	records, err := db.Ent.Talkgroup.Query().Where(enttalkgroup.SystemID(int(systemId))).All(context.Background())
 	if err != nil {
-		return formatError(err)
+		return fmt.Errorf("talkgroups.read: %w", err)
+	}
+
+	for _, r := range records {
+		talkgroup := &Talkgroup{
+			GroupId: uint(r.GroupID),
+			Id:      uint(r.TalkgroupID),
+			Label:   r.Label,
+			Name:    r.Name,
+			Order:   0,
+			TagId:   uint(r.TagID),
+		}
+		if r.Order != nil && *r.Order > 0 {
+			talkgroup.Order = uint(*r.Order)
+		}
+		if r.Frequency != nil && *r.Frequency > 0 {
+			talkgroup.Frequency = uint(*r.Frequency)
+		}
+		if r.Led != nil && len(*r.Led) > 0 {
+			talkgroup.Led = *r.Led
+		}
+		talkgroups.List = append(talkgroups.List, talkgroup)
 	}
 
 	sort.Slice(talkgroups.List, func(i int, j int) bool {
@@ -200,99 +183,58 @@ func (talkgroups *Talkgroups) Read(db *Database, systemId uint) error {
 
 	return nil
 }
-
 func (talkgroups *Talkgroups) Write(db *Database, systemId uint) error {
-	var (
-		count uint
-		err   error
-		ids   = []uint{}
-		rows  *sql.Rows
-	)
-
 	talkgroups.mutex.Lock()
 	defer talkgroups.mutex.Unlock()
 
+	ctx := context.Background()
+	sysId := int(systemId)
+
 	formatError := func(err error) error {
-		return fmt.Errorf("talkgroups.write: %v", err)
+		return fmt.Errorf("talkgroups.write: %w", err)
 	}
 
-	q := "select `id` from `rdioscannertalkgroups` where `systemId` = ?"
-	if db.Config.DbType == DbTypePostgresql {
-		q = "select id from rdioscannertalkgroups where systemId = $1"
+	keep := make([]int, 0, len(talkgroups.List))
+	for _, talkgroup := range talkgroups.List {
+		keep = append(keep, int(talkgroup.Id))
 	}
-	if rows, err = db.Sql.Query(q, systemId); err != nil {
+
+	if _, err := db.Ent.Talkgroup.Delete().Where(enttalkgroup.SystemID(sysId), enttalkgroup.TalkgroupIDNotIn(keep...)).Exec(ctx); err != nil {
 		return formatError(err)
-	}
-
-	for rows.Next() {
-		var id uint
-		if err = rows.Scan(&id); err != nil {
-			break
-		}
-		remove := true
-		for _, talkgroup := range talkgroups.List {
-			if talkgroup.Id == id {
-				remove = false
-				break
-			}
-		}
-		if remove {
-			ids = append(ids, id)
-		}
-	}
-
-	rows.Close()
-
-	if err != nil {
-		return formatError(err)
-	}
-
-	if len(ids) > 0 {
-		if b, err := json.Marshal(ids); err == nil {
-			s := string(b)
-			s = strings.ReplaceAll(s, "[", "(")
-			s = strings.ReplaceAll(s, "]", ")")
-			q := fmt.Sprintf("delete from `rdioscannertalkgroups` where `id` in %v and `systemId` = %v", s, systemId)
-			if db.Config.DbType == DbTypePostgresql {
-				q = fmt.Sprintf("delete from rdioscannertalkgroups where id in %v and systemId = %v", s, systemId)
-			}
-			if _, err = db.Sql.Exec(q); err != nil {
-				return formatError(err)
-			}
-		}
 	}
 
 	for _, talkgroup := range talkgroups.List {
-		q := "select count(*) from `rdioscannertalkgroups` where `id` = ? and `systemId` = ?"
-		if db.Config.DbType == DbTypePostgresql {
-			q = "select count(*) from rdioscannertalkgroups where id = $1 and systemId = $2"
+		exists, err := db.Ent.Talkgroup.Query().Where(enttalkgroup.SystemID(sysId), enttalkgroup.TalkgroupID(int(talkgroup.Id))).Exist(ctx)
+		if err != nil {
+			return formatError(err)
 		}
-		if err = db.Sql.QueryRow(q, talkgroup.Id, systemId).Scan(&count); err != nil {
-			break
-		}
-
-		if count == 0 {
-			q = "insert into `rdioscannertalkgroups` (`frequency`, `groupId`, `id`, `label`, `led`, `name`, `order`, `systemId`, `tagId`) values (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-			if db.Config.DbType == DbTypePostgresql {
-				q = "insert into rdioscannertalkgroups (frequency, groupId, id, label, led, name, \"order\", systemId, tagId) values ($1, $2, $3, $4, $5, $6, $7, $8, $9)"
+		if exists {
+			upd := db.Ent.Talkgroup.Update().Where(enttalkgroup.SystemID(sysId), enttalkgroup.TalkgroupID(int(talkgroup.Id))).
+				SetGroupID(int(talkgroup.GroupId)).
+				SetTagID(int(talkgroup.TagId)).
+				SetLabel(talkgroup.Label).
+				SetName(talkgroup.Name)
+			setOrClearInt(upd.SetFrequency, upd.ClearFrequency, nillablePosInt(talkgroup.Frequency))
+			setOrClearInt(upd.SetOrder, upd.ClearOrder, nillablePosInt(talkgroup.Order))
+			setOrClearStr(upd.SetLed, upd.ClearLed, nillableStr(talkgroup.Led))
+			if _, err := upd.Save(ctx); err != nil {
+				return formatError(err)
 			}
-			if _, err = db.Sql.Exec(q, talkgroup.Frequency, talkgroup.GroupId, talkgroup.Id, talkgroup.Label, talkgroup.Led, talkgroup.Name, talkgroup.Order, systemId, talkgroup.TagId); err != nil {
-				break
-			}
-
 		} else {
-			q = "update `rdioscannertalkgroups` set `frequency` = ?, `groupId` = ?, `label` = ?, `led` = ?, `name` = ?, `order` = ?, `tagId` = ? where `id` = ? and `systemId` = ?"
-			if db.Config.DbType == DbTypePostgresql {
-				q = "update rdioscannertalkgroups set frequency = $1, groupId = $2, label = $3, led = $4, name = $5, \"order\" = $6, tagId = $7 where id = $8 and systemId = $9"
-			}
-			if _, err = db.Sql.Exec(q, talkgroup.Frequency, talkgroup.GroupId, talkgroup.Label, talkgroup.Led, talkgroup.Name, talkgroup.Order, talkgroup.TagId, talkgroup.Id, systemId); err != nil {
-				break
+			if err := db.Ent.Talkgroup.Create().
+				SetTalkgroupID(int(talkgroup.Id)).
+				SetSystemID(sysId).
+				SetGroupID(int(talkgroup.GroupId)).
+				SetTagID(int(talkgroup.TagId)).
+				SetLabel(talkgroup.Label).
+				SetName(talkgroup.Name).
+				SetNillableFrequency(nillablePosInt(talkgroup.Frequency)).
+				SetNillableOrder(nillablePosInt(talkgroup.Order)).
+				SetNillableLed(nillableStr(talkgroup.Led)).
+				Exec(ctx); err != nil {
+				return formatError(err)
 			}
 		}
-	}
-
-	if err != nil {
-		return formatError(err)
 	}
 
 	return nil

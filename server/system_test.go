@@ -234,7 +234,6 @@ func TestSystemsReadWrite(t *testing.T) {
 // Removing an existing system and adding a new one in the same Write must do
 // both, including dropping the removed system's talkgroups.
 func TestSystemsWriteRemoveAndAddTogether(t *testing.T) {
-	t.Skip("known bug: sync-list Write skips deletions when any item has a nil Id; fixed during ent migration")
 
 	forEachDatabase(t, func(t *testing.T, db *Database) {
 		systems, g, tg := writeTwoSystems(t, db)
