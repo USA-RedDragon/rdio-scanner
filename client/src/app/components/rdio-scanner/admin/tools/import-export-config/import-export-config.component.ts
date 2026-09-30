@@ -17,8 +17,8 @@
  * ****************************************************************************
  */
 
-import { DOCUMENT } from '@angular/common';
-import { Component, EventEmitter, Output, inject } from '@angular/core';
+
+import { Component, EventEmitter, Output, inject, DOCUMENT } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Config, RdioScannerAdminService } from '../../admin.service';
 
@@ -26,6 +26,7 @@ import { Config, RdioScannerAdminService } from '../../admin.service';
     selector: 'rdio-scanner-admin-import-export-config',
     styleUrls: ['./import-export-config.component.scss'],
     templateUrl: './import-export-config.component.html',
+    standalone: false
 })
 export class RdioScannerAdminImportExportConfigComponent {
     private adminService = inject(RdioScannerAdminService)

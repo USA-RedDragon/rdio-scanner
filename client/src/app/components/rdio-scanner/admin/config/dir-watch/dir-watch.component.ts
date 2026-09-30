@@ -26,6 +26,7 @@ import { RdioScannerAdminService } from '../../admin.service';
 @Component({
     selector: 'rdio-scanner-admin-dir-watch',
     templateUrl: './dir-watch.component.html',
+    standalone: false
 })
 export class RdioScannerAdminDirWatchComponent implements OnChanges {
     private adminService = inject(RdioScannerAdminService)

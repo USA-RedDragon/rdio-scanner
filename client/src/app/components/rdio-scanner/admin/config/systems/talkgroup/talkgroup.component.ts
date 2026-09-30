@@ -24,6 +24,7 @@ import { RdioScannerAdminService, Group, Tag } from '../../../admin.service';
 @Component({
     selector: 'rdio-scanner-admin-talkgroup',
     templateUrl: './talkgroup.component.html',
+    standalone: false
 })
 export class RdioScannerAdminTalkgroupComponent {
     private adminService = inject(RdioScannerAdminService)

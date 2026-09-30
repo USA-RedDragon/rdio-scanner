@@ -41,6 +41,7 @@ import { RdioScannerService } from '../rdio-scanner.service';
         './main.component.scss',
     ],
     templateUrl: './main.component.html',
+    standalone: false
 })
 export class RdioScannerMainComponent implements OnDestroy, OnInit {
     private ngFormBuilder = inject(UntypedFormBuilder);

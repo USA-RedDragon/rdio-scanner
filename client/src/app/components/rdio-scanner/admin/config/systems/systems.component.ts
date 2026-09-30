@@ -26,6 +26,7 @@ import { RdioScannerAdminService } from '../../admin.service';
 @Component({
     selector: 'rdio-scanner-admin-systems',
     templateUrl: './systems.component.html',
+    standalone: false
 })
 export class RdioScannerAdminSystemsComponent {
     private adminService = inject(RdioScannerAdminService)

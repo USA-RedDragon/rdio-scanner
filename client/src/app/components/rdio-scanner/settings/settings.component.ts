@@ -27,6 +27,7 @@ import { RdioScannerSettingsService } from './settings.service';
         './settings.component.scss',
     ],
     templateUrl: './settings.component.html',
+    standalone: false
 })
 
 export class RdioScannerSettingsComponent {

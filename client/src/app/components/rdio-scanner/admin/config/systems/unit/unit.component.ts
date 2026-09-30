@@ -23,6 +23,7 @@ import { UntypedFormGroup } from '@angular/forms';
 @Component({
     selector: 'rdio-scanner-admin-unit',
     templateUrl: './unit.component.html',
+    standalone: false
 })
 export class RdioScannerAdminUnitComponent {
     @Input() form: UntypedFormGroup | undefined;

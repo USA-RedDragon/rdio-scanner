@@ -29,6 +29,7 @@ import { AdminEvent, RdioScannerAdminService, Config } from '../admin.service';
     selector: 'rdio-scanner-admin-config',
     styleUrls: ['./config.component.scss'],
     templateUrl: './config.component.html',
+    standalone: false
 })
 export class RdioScannerAdminConfigComponent implements OnDestroy, OnInit {
     private adminService = inject(RdioScannerAdminService)

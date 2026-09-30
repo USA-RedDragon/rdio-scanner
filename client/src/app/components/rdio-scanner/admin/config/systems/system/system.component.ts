@@ -26,6 +26,7 @@ import { RdioScannerAdminService, Group, Tag } from '../../../admin.service';
 @Component({
     selector: 'rdio-scanner-admin-system',
     templateUrl: './system.component.html',
+    standalone: false
 })
 export class RdioScannerAdminSystemComponent implements OnChanges {
     private adminService = inject(RdioScannerAdminService)

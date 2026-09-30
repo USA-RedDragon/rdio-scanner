@@ -38,6 +38,7 @@ interface Talkgroup {
     selector: 'rdio-scanner-admin-systems-selection',
     styleUrls: ['./select.component.scss'],
     templateUrl: './select.component.html',
+    standalone: false
 })
 export class RdioScannerAdminSystemsSelectComponent {
     private access = inject(MAT_DIALOG_DATA);

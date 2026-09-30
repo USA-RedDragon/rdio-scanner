@@ -28,6 +28,7 @@ import { RdioScannerAdminSystemsSelectComponent } from '../systems/select/select
 @Component({
     selector: 'rdio-scanner-admin-api-keys',
     templateUrl: './api-keys.component.html',
+    standalone: false
 })
 export class RdioScannerAdminApiKeysComponent {
     private adminService = inject(RdioScannerAdminService)

@@ -24,6 +24,7 @@ import { AppUpdateService } from './update.service';
     selector: 'app-root',
     styleUrls: ['./app.component.scss'],
     templateUrl: './app.component.html',
+    standalone: false
 })
 export class AppComponent {
     private appUpdateService = inject(AppUpdateService)

@@ -25,6 +25,7 @@ import { RdioScannerAdminService } from '../../admin.service';
     selector: 'rdio-scanner-admin-groups',
     styleUrls: ['./groups.component.scss'],
     templateUrl: './groups.component.html',
+    standalone: false
 })
 export class RdioScannerAdminGroupsComponent {
     private adminService = inject(RdioScannerAdminService)

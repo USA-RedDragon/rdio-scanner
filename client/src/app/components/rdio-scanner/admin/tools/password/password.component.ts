@@ -26,6 +26,7 @@ import { RdioScannerAdminService } from '../../admin.service';
     selector: 'rdio-scanner-admin-password',
     styleUrls: ['./password.component.scss'],
     templateUrl: './password.component.html',
+    standalone: false
 })
 export class RdioScannerAdminPasswordComponent {
   private ngFormBuilder = inject(UntypedFormBuilder);

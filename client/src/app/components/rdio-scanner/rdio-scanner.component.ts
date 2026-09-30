@@ -29,6 +29,7 @@ import { WindowRef } from './windowRef';
     selector: 'rdio-scanner',
     styleUrls: ['./rdio-scanner.component.scss'],
     templateUrl: './rdio-scanner.component.html',
+    standalone: false
 })
 export class RdioScannerComponent implements OnDestroy {
     private rdioScannerService = inject(RdioScannerService)

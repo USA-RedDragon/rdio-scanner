@@ -25,6 +25,7 @@ import { RdioScannerAdminService } from '../../admin.service';
     selector: 'rdio-scanner-admin-tags',
     styleUrls: ['./tags.component.scss'],
     templateUrl: './tags.component.html',
+    standalone: false
 })
 export class RdioScannerAdminTagsComponent {
     private adminService = inject(RdioScannerAdminService)

@@ -1,18 +1,22 @@
 <div class="row top">
-    <p class="mat-body">All system talkgroups must be associated with a tag, which is then used to search for calls
-        based on their tag.</p>
-    <button type="button" mat-button color="accent" (click)="add()">New tag</button>
+  <p class="mat-body">All system talkgroups must be associated with a tag, which is then used to search for calls
+  based on their tag.</p>
+  <button type="button" mat-button color="accent" (click)="add()">New tag</button>
 </div>
 <div class="tags">
-    <div *ngFor="let tag of tags; index as i" [formGroup]="tag">
-        <button type="button" mat-icon-button color="warn" (click)="remove(i)">
-            <mat-icon>clear</mat-icon>
-        </button>
-        <mat-form-field>
-            <input type="text" matInput formControlName="label" placeholder="Tag">
-            <mat-error *ngIf="tags[i].get('label')?.hasError('required')">
-                Tag is required
-            </mat-error>
-        </mat-form-field>
+  @for (tag of tags; track tag; let i = $index) {
+    <div [formGroup]="tag">
+      <button type="button" mat-icon-button color="warn" (click)="remove(i)">
+        <mat-icon>clear</mat-icon>
+      </button>
+      <mat-form-field>
+        <input type="text" matInput formControlName="label" placeholder="Tag">
+        @if (tags[i].get('label')?.hasError('required')) {
+          <mat-error>
+            Tag is required
+          </mat-error>
+        }
+      </mat-form-field>
     </div>
+  }
 </div>
