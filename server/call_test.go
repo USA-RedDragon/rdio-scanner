@@ -183,7 +183,6 @@ func TestCallsPrune(t *testing.T) {
 // calls are stored in UTC, so west of UTC it keeps hours of calls it should
 // drop (and east of UTC it drops calls it should keep).
 func TestCallsPruneIsTimeZoneIndependent(t *testing.T) {
-	t.Skip("known bug: Prune cutoff uses local wall-clock time against UTC-stored dateTime; fixed during ent migration")
 
 	withLocalZone(t, time.FixedZone("UTC-5", -5*3600))
 	forEachDatabase(t, func(t *testing.T, db *Database) {
@@ -345,7 +344,6 @@ func TestCallsSearch(t *testing.T) {
 // the system condition without parentheses, so a call in another system whose
 // patches contain the talkgroup leaks into the results.
 func TestCallsSearchPatchedTalkgroupsStaysInSystem(t *testing.T) {
-	t.Skip("known bug: patched-talkgroup search ORs patches outside the system condition; fixed during ent migration")
 
 	forEachDatabase(t, func(t *testing.T, db *Database) {
 		calls, ids := searchFixture(t, db)
@@ -360,7 +358,6 @@ func TestCallsSearchPatchedTalkgroupsStaysInSystem(t *testing.T) {
 // A call patched with a single talkgroup is stored as "[10]", which none of
 // the patches patterns ('10', '[10,%', '%,10,%', '%,10]') match.
 func TestCallsSearchPatchedTalkgroupsSinglePatch(t *testing.T) {
-	t.Skip("known bug: patched-talkgroup search misses calls whose patches list has exactly one entry; fixed during ent migration")
 
 	forEachDatabase(t, func(t *testing.T, db *Database) {
 		calls := NewCalls()
