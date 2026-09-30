@@ -13,6 +13,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-package ent
+//go:build tools
 
-//go:generate go run entgo.io/ent/cmd/ent generate --feature sql/execquery,sql/upsert,sql/versioned-migration ./schema
+// Package tools pins the ent code generator as a module dependency so that
+// `go generate ./ent` resolves it from go.mod/go.sum without the -mod=mod
+// flag (which would rewrite go.sum and fail goreleaser's clean-tree check).
+package main
+
+import _ "entgo.io/ent/cmd/ent"

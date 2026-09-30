@@ -1,12 +1,17 @@
+version: "2"
+
 run:
   timeout: 30m
 
-  skip-files:
-    - ".*\\_gen\\.go$"
-    - ".*\\_gen\\_test\\.go$"
-    - ".*\\_test\\.go$"
-
 linters:
+  exclusions:
+    # ent-generated files carry a "Code generated" header; skip them, plus
+    # generated and test files (the previous config skipped these too).
+    generated: lax
+    paths:
+      - '.*_gen\.go$'
+      - '.*_gen_test\.go$'
+      - '.*_test\.go$'
   enable:
     - asasalint
     - asciicheck
@@ -21,9 +26,7 @@ linters:
     - errname
     - errorlint
     - exhaustive
-    - exportloopref
     - forcetypeassert
-    - gci
     - gocheckcompilerdirectives
     - gochecknoglobals
     - gochecknoinits
@@ -31,8 +34,6 @@ linters:
     - gocritic
     - gocyclo
     - godox
-    - gofmt
-    - goheader
     - gomoddirectives
     - gosec
     - grouper
@@ -54,3 +55,8 @@ linters:
     - usestdlibvars
     - wastedassign
     - whitespace
+
+formatters:
+  enable:
+    - gci
+    - gofmt
