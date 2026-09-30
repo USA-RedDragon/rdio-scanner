@@ -170,9 +170,9 @@ func (apikeys *Apikeys) Read(db *Database) error {
 		return fmt.Errorf("apikeys.read: %v", err)
 	}
 
-	q := "select `_id`, `disabled`, `ident`, `key`, `order`, `systems` from `rdioScannerApiKeys`"
+	q := "select `_id`, `disabled`, `ident`, `key`, `order`, `systems` from `rdioscannerapikeys`"
 	if db.Config.DbType == DbTypePostgresql {
-		q = "select _id, disabled, ident, key, \"order\", systems from rdioScannerApiKeys"
+		q = "select _id, disabled, ident, key, \"order\", systems from rdioscannerapikeys"
 	}
 	if rows, err = db.Sql.Query(q); err != nil {
 		return formatError(err)
@@ -233,9 +233,9 @@ func (apikeys *Apikeys) Write(db *Database) error {
 		return fmt.Errorf("apikeys.write %v", err)
 	}
 
-	q := "select `_id` from `rdioScannerApiKeys`"
+	q := "select `_id` from `rdioscannerapikeys`"
 	if db.Config.DbType == DbTypePostgresql {
-		q = "select _id from rdioScannerApiKeys"
+		q = "select _id from rdioscannerapikeys"
 	}
 	if rows, err = db.Sql.Query(q); err != nil {
 		return formatError(err)
@@ -269,9 +269,9 @@ func (apikeys *Apikeys) Write(db *Database) error {
 			s := string(b)
 			s = strings.ReplaceAll(s, "[", "(")
 			s = strings.ReplaceAll(s, "]", ")")
-			q := fmt.Sprintf("delete from `rdioScannerApikeys` where `_id` in %v", s)
+			q := fmt.Sprintf("delete from `rdioscannerapikeys` where `_id` in %v", s)
 			if db.Config.DbType == DbTypePostgresql {
-				q = fmt.Sprintf("delete from rdioScannerApikeys where _id in %v", s)
+				q = fmt.Sprintf("delete from rdioscannerapikeys where _id in %v", s)
 			}
 			if _, err = db.Sql.Exec(q); err != nil {
 				return formatError(err)
@@ -287,9 +287,9 @@ func (apikeys *Apikeys) Write(db *Database) error {
 			systems = apikey.Systems
 		}
 
-		q := "select count(*) from `rdioScannerApiKeys` where `_id` = ?"
+		q := "select count(*) from `rdioscannerapikeys` where `_id` = ?"
 		if db.Config.DbType == DbTypePostgresql {
-			q = "select count(*) from rdioScannerApiKeys where _id = $1"
+			q = "select count(*) from rdioscannerapikeys where _id = $1"
 		}
 		if err = db.Sql.QueryRow(q, apikey.Id).Scan(&count); err != nil {
 			break
@@ -297,20 +297,20 @@ func (apikeys *Apikeys) Write(db *Database) error {
 
 		if count == 0 {
 			if db.Config.DbType == DbTypePostgresql {
-				q = "insert into rdioScannerApiKeys (disabled, ident, key, \"order\", systems) values ($1, $2, $3, $4, $5)"
+				q = "insert into rdioscannerapikeys (disabled, ident, key, \"order\", systems) values ($1, $2, $3, $4, $5)"
 				if _, err = db.Sql.Exec(q, apikey.Disabled, apikey.Ident, apikey.Key, apikey.Order, systems); err != nil {
 					break
 				}
 			} else {
-				q = "insert into `rdioScannerApiKeys` (`_id`, `disabled`, `ident`, `key`, `order`, `systems`) values (?, ?, ?, ?, ?, ?)"
+				q = "insert into `rdioscannerapikeys` (`_id`, `disabled`, `ident`, `key`, `order`, `systems`) values (?, ?, ?, ?, ?, ?)"
 				if _, err = db.Sql.Exec(q, apikey.Id, apikey.Disabled, apikey.Ident, apikey.Key, apikey.Order, systems); err != nil {
 					break
 				}
 			}
 		} else {
-			q := "update `rdioScannerApiKeys` set `_id` = ?, `disabled` = ?, `ident` = ?, `key` = ?, `order` = ?, `systems` = ? where `_id` = ?"
+			q := "update `rdioscannerapikeys` set `_id` = ?, `disabled` = ?, `ident` = ?, `key` = ?, `order` = ?, `systems` = ? where `_id` = ?"
 			if db.Config.DbType == DbTypePostgresql {
-				q = "update rdioScannerApiKeys set _id = $1, disabled = $2, ident = $3, key = $4, \"order\" = $5, systems = $6 where _id = $7"
+				q = "update rdioscannerapikeys set _id = $1, disabled = $2, ident = $3, key = $4, \"order\" = $5, systems = $6 where _id = $7"
 			}
 			if _, err = db.Sql.Exec(q, apikey.Id, apikey.Disabled, apikey.Ident, apikey.Key, apikey.Order, systems, apikey.Id); err != nil {
 				break

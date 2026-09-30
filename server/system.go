@@ -339,9 +339,9 @@ func (systems *Systems) Read(db *Database) error {
 		return fmt.Errorf("systems.read: %v", err)
 	}
 
-	q := "select `_id`, `autoPopulate`, `blacklists`, `id`, `label`, `led`, `order` from `rdioScannerSystems`"
+	q := "select `_id`, `autoPopulate`, `blacklists`, `id`, `label`, `led`, `order` from `rdioscannersystems`"
 	if db.Config.DbType == DbTypePostgresql {
-		q = "select _id, autoPopulate, blacklists, id, label, led, \"order\" from rdioScannerSystems"
+		q = "select _id, autoPopulate, blacklists, id, label, led, \"order\" from rdioscannersystems"
 	}
 	if rows, err = db.Sql.Query(q); err != nil {
 		return formatError(err)
@@ -416,9 +416,9 @@ func (systems *Systems) Write(db *Database) error {
 		return fmt.Errorf("systems.write: %v", err)
 	}
 
-	q := "select `_id`, `id` from `rdioScannerSystems`"
+	q := "select `_id`, `id` from `rdioscannersystems`"
 	if db.Config.DbType == DbTypePostgresql {
-		q = "select _id, id from rdioScannerSystems"
+		q = "select _id, id from rdioscannersystems"
 	}
 	if rows, err = db.Sql.Query(q); err != nil {
 		return formatError(err)
@@ -454,9 +454,9 @@ func (systems *Systems) Write(db *Database) error {
 			s := string(b)
 			s = strings.ReplaceAll(s, "[", "(")
 			s = strings.ReplaceAll(s, "]", ")")
-			q := fmt.Sprintf("delete from `rdioScannerSystems` where `_id` in %v", s)
+			q := fmt.Sprintf("delete from `rdioscannersystems` where `_id` in %v", s)
 			if db.Config.DbType == DbTypePostgresql {
-				q = fmt.Sprintf("delete from rdioScannerSystems where _id in %v", s)
+				q = fmt.Sprintf("delete from rdioscannersystems where _id in %v", s)
 			}
 			if _, err = db.Sql.Exec(q); err != nil {
 				return formatError(err)
@@ -469,16 +469,16 @@ func (systems *Systems) Write(db *Database) error {
 			s := string(b)
 			s = strings.ReplaceAll(s, "[", "(")
 			s = strings.ReplaceAll(s, "]", ")")
-			q := fmt.Sprintf("delete from `rdioScannerTalkgroups` where `systemId` in %v", s)
+			q := fmt.Sprintf("delete from `rdioscannertalkgroups` where `systemId` in %v", s)
 			if db.Config.DbType == DbTypePostgresql {
-				q = fmt.Sprintf("delete from rdioScannerTalkgroups where systemId in %v", s)
+				q = fmt.Sprintf("delete from rdioscannertalkgroups where systemId in %v", s)
 			}
 			if _, err = db.Sql.Exec(q); err != nil {
 				return formatError(err)
 			}
-			q = fmt.Sprintf("delete from `rdioScannerUnits` where `systemId` in %v", s)
+			q = fmt.Sprintf("delete from `rdioscannerunits` where `systemId` in %v", s)
 			if db.Config.DbType == DbTypePostgresql {
-				q = fmt.Sprintf("delete from rdioScannerUnits where systemId in %v", s)
+				q = fmt.Sprintf("delete from rdioscannerunits where systemId in %v", s)
 			}
 			if _, err = db.Sql.Exec(q); err != nil {
 				return formatError(err)
@@ -493,9 +493,9 @@ func (systems *Systems) Write(db *Database) error {
 			blacklists = "[]"
 		}
 
-		q = "select count(*) from `rdioScannerSystems` where `_id` = ?"
+		q = "select count(*) from `rdioscannersystems` where `_id` = ?"
 		if db.Config.DbType == DbTypePostgresql {
-			q = "select count(*) from rdioScannerSystems where _id = $1"
+			q = "select count(*) from rdioscannersystems where _id = $1"
 		}
 		if err = db.Sql.QueryRow(q, system.RowId).Scan(&count); err != nil {
 			break
@@ -503,21 +503,21 @@ func (systems *Systems) Write(db *Database) error {
 
 		if count == 0 {
 			if db.Config.DbType == DbTypePostgresql {
-				q = "insert into rdioScannerSystems (autoPopulate, blacklists, id, label, led, \"order\") values ($1, $2, $3, $4, $5, $6)"
+				q = "insert into rdioscannersystems (autoPopulate, blacklists, id, label, led, \"order\") values ($1, $2, $3, $4, $5, $6)"
 				if _, err = db.Sql.Exec(q, system.AutoPopulate, blacklists, system.Id, system.Label, system.Led, system.Order); err != nil {
 					break
 				}
 			} else {
-				q = "insert into `rdioScannerSystems` (`_id`, `autoPopulate`, `blacklists`, `id`, `label`, `led`, `order`) values (?, ?, ?, ?, ?, ?, ?)"
+				q = "insert into `rdioscannersystems` (`_id`, `autoPopulate`, `blacklists`, `id`, `label`, `led`, `order`) values (?, ?, ?, ?, ?, ?, ?)"
 				if _, err = db.Sql.Exec(q, system.RowId, system.AutoPopulate, blacklists, system.Id, system.Label, system.Led, system.Order); err != nil {
 					break
 				}
 			}
 
 		} else {
-			q = "update `rdioScannerSystems` set `_id` = ?, `autoPopulate` = ?, `blacklists` = ?, `id` = ?, `label` = ?, `led` = ?, `order` = ? where `_id` = ?"
+			q = "update `rdioscannersystems` set `_id` = ?, `autoPopulate` = ?, `blacklists` = ?, `id` = ?, `label` = ?, `led` = ?, `order` = ? where `_id` = ?"
 			if db.Config.DbType == DbTypePostgresql {
-				q = "update rdioScannerSystems set _id = $1, autoPopulate = $2, blacklists = $3, id = $4, label = $5, led = $6, \"order\" = $7 where _id = $8"
+				q = "update rdioscannersystems set _id = $1, autoPopulate = $2, blacklists = $3, id = $4, label = $5, led = $6, \"order\" = $7 where _id = $8"
 			}
 			if _, err = db.Sql.Exec(q, system.RowId, system.AutoPopulate, blacklists, system.Id, system.Label, system.Led, system.Order, system.RowId); err != nil {
 				break

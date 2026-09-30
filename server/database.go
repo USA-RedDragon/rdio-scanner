@@ -16,6 +16,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -23,6 +24,9 @@ import (
 	"strings"
 	"time"
 
+	entdialect "entgo.io/ent/dialect"
+	entsql "entgo.io/ent/dialect/sql"
+	"github.com/USA-RedDragon/rdio-scanner/server/ent"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
 	_ "modernc.org/sqlite"
@@ -32,6 +36,10 @@ type Database struct {
 	Config         *Config
 	DateTimeFormat string
 	Sql            *sql.DB
+	// Ent is the typed client over the same connection pool as Sql. Data
+	// access moves to it table by table; Sql remains for the legacy
+	// migrations.
+	Ent *ent.Client
 }
 
 func NewDatabase(config *Config) *Database {
@@ -52,7 +60,9 @@ func NewDatabase(config *Config) *Database {
 	case DbTypeMariadb, DbTypeMysql:
 		database.DateTimeFormat = "2006-01-02 15:04:05"
 
-		dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", config.DbUsername, config.DbPassword, config.DbHost, config.DbPort, config.DbName)
+		// parseTime: datetimes scan into time.Time (ent needs it; ParseDateTime
+		// accepts time.Time too).
+		dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=true", config.DbUsername, config.DbPassword, config.DbHost, config.DbPort, config.DbName)
 
 		if database.Sql, err = sql.Open("mysql", dsn); err != nil {
 			log.Fatal(err)
@@ -76,6 +86,8 @@ func NewDatabase(config *Config) *Database {
 	database.Sql.SetMaxIdleConns(25)
 	database.Sql.SetMaxOpenConns(25)
 
+	database.Ent = ent.NewClient(ent.Driver(entsql.OpenDB(database.entDialect(), database.Sql)))
+
 	if err = database.migrate(); err != nil {
 		log.Fatal(err)
 	}
@@ -85,6 +97,17 @@ func NewDatabase(config *Config) *Database {
 	}
 
 	return database
+}
+
+func (db *Database) entDialect() string {
+	switch db.Config.DbType {
+	case DbTypeMariadb, DbTypeMysql:
+		return entdialect.MySQL
+	case DbTypePostgresql:
+		return entdialect.Postgres
+	default:
+		return entdialect.SQLite
+	}
 }
 
 func (db *Database) ParseDateTime(f any) (time.Time, error) {
@@ -137,6 +160,9 @@ func (db *Database) migrate() error {
 	}
 	if err == nil {
 		err = db.migration20220101070000(verbose)
+	}
+	if err == nil {
+		err = db.migration20260930000000(verbose)
 	}
 
 	return err
@@ -610,6 +636,61 @@ func (db *Database) prepareMigration() (bool, error) {
 	return verbose, err
 }
 
+// migration20260930000000 makes every stored table and column name lowercase
+// so ent and the queries can use one spelling everywhere. PostgreSQL already
+// stores them lowercase (the legacy DDL was unquoted).
+//   - MySQL/MariaDB match table names case-sensitively (with the default
+//     lower_case_table_names=0), so the tables are renamed.
+//   - SQLite matches names case-insensitively in queries but labels result
+//     columns with their declared spelling ("audioName"), which ent can't map,
+//     so the mixed-case columns are renamed.
+//
+// rdioScannerMeta keeps its name: the migration code above addresses it
+// before this migration runs.
+func (db *Database) migration20260930000000(verbose bool) error {
+	queries := []string{}
+
+	if db.Config.DbType == DbTypeMariadb || db.Config.DbType == DbTypeMysql {
+		rows, err := db.Sql.Query("select table_name from information_schema.tables where table_schema = database() and table_name like 'rdioScanner%'")
+		if err != nil {
+			return fmt.Errorf("migration20260930000000: %w", err)
+		}
+		for rows.Next() {
+			var name string
+			if err = rows.Scan(&name); err != nil {
+				break
+			}
+			if name != "rdioScannerMeta" && name != strings.ToLower(name) {
+				queries = append(queries, fmt.Sprintf("rename table `%s` to `%s`", name, strings.ToLower(name)))
+			}
+		}
+		rows.Close()
+		if err != nil {
+			return fmt.Errorf("migration20260930000000: %w", err)
+		}
+	}
+
+	if db.Config.DbType == DbTypeSqlite {
+		rows, err := db.Sql.Query("select m.name, p.name from sqlite_master m join pragma_table_info(m.name) p where m.type = 'table' and m.name like 'rdioScanner%' and m.name <> 'rdioScannerMeta' and p.name <> lower(p.name)")
+		if err != nil {
+			return fmt.Errorf("migration20260930000000: %w", err)
+		}
+		for rows.Next() {
+			var table, column string
+			if err = rows.Scan(&table, &column); err != nil {
+				break
+			}
+			queries = append(queries, fmt.Sprintf("alter table \"%s\" rename column \"%s\" to \"%s\"", table, column, strings.ToLower(column)))
+		}
+		rows.Close()
+		if err != nil {
+			return fmt.Errorf("migration20260930000000: %w", err)
+		}
+	}
+
+	return db.migrateWithSchema("20260930000000-v7.3-lowercase-names", queries, verbose)
+}
+
 func (db *Database) seed() error {
 	if err := db.seedGroups(); err != nil {
 		return err
@@ -623,88 +704,44 @@ func (db *Database) seed() error {
 }
 
 func (db *Database) seedGroups() error {
-	var count uint
+	ctx := context.Background()
 
-	formatError := func(err error) error {
-		return fmt.Errorf("database.seedgroups: %s", err.Error())
+	count, err := db.Ent.Group.Query().Count(ctx)
+	if err != nil {
+		return fmt.Errorf("database.seedgroups: %w", err)
+	}
+	if count > 0 {
+		return nil
 	}
 
-	if db.Config.DbType != DbTypePostgresql {
-		if err := db.Sql.QueryRow("select count(*) from `rdioScannerGroups`").Scan(&count); err != nil {
-			return formatError(err)
-		}
-	} else {
-		if err := db.Sql.QueryRow("select count(*) from rdioScannerGroups").Scan(&count); err != nil {
-			return formatError(err)
-		}
+	creates := make([]*ent.GroupCreate, 0, len(defaults.groups))
+	for _, label := range defaults.groups {
+		creates = append(creates, db.Ent.Group.Create().SetLabel(label))
 	}
-
-	if count == 0 {
-		if tx, err := db.Sql.Begin(); err == nil {
-			for _, group := range defaults.groups {
-				query := ""
-				if db.Config.DbType != DbTypePostgresql {
-					query = "insert into `rdioScannerGroups` (`label`) values (?)"
-				} else {
-					query = "insert into rdioScannerGroups (label) values ($1)"
-				}
-				if _, err := tx.Exec(query, group); err != nil {
-					tx.Rollback()
-					return formatError(err)
-				}
-			}
-
-			if err := tx.Commit(); err != nil {
-				return formatError(err)
-			}
-
-		} else {
-			return formatError(err)
-		}
+	if err = db.Ent.Group.CreateBulk(creates...).Exec(ctx); err != nil {
+		return fmt.Errorf("database.seedgroups: %w", err)
 	}
 
 	return nil
 }
 
 func (db *Database) seedTags() error {
-	var count uint
+	ctx := context.Background()
 
-	formatError := func(err error) error {
-		return fmt.Errorf("database.seedtags: %s", err.Error())
+	count, err := db.Ent.Tag.Query().Count(ctx)
+	if err != nil {
+		return fmt.Errorf("database.seedtags: %w", err)
+	}
+	if count > 0 {
+		return nil
 	}
 
-	if db.Config.DbType != DbTypePostgresql {
-		if err := db.Sql.QueryRow("select count(*) from `rdioScannerTags`").Scan(&count); err != nil {
-			return formatError(err)
-		}
-	} else {
-		if err := db.Sql.QueryRow("select count(*) from rdioScannerTags").Scan(&count); err != nil {
-			return formatError(err)
-		}
+	creates := make([]*ent.TagCreate, 0, len(defaults.tags))
+	for _, label := range defaults.tags {
+		creates = append(creates, db.Ent.Tag.Create().SetLabel(label))
 	}
-
-	if count == 0 {
-		if tx, err := db.Sql.Begin(); err == nil {
-			for _, group := range defaults.tags {
-				query := ""
-				if db.Config.DbType != DbTypePostgresql {
-					query = "insert into `rdioScannerTags` (`label`) values (?)"
-				} else {
-					query = "insert into rdioScannerTags (label) values ($1)"
-				}
-				if _, err := tx.Exec(query, group); err != nil {
-					tx.Rollback()
-					return formatError(err)
-				}
-			}
-
-			if err := tx.Commit(); err != nil {
-				return formatError(err)
-			}
-
-		} else {
-			return formatError(err)
-		}
+	if err = db.Ent.Tag.CreateBulk(creates...).Exec(ctx); err != nil {
+		return fmt.Errorf("database.seedtags: %w", err)
 	}
 
 	return nil

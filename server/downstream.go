@@ -399,9 +399,9 @@ func (downstreams *Downstreams) Read(db *Database) error {
 		return fmt.Errorf("downstreams.read: %v", err)
 	}
 
-	q := "select `_id`, `apiKey`, `disabled`, `order`, `systems`, `url` from `rdioScannerDownstreams`"
+	q := "select `_id`, `apiKey`, `disabled`, `order`, `systems`, `url` from `rdioscannerdownstreams`"
 	if db.Config.DbType == DbTypePostgresql {
-		q = "select _id, apiKey, disabled, \"order\", systems, url from rdioScannerDownstreams"
+		q = "select _id, apiKey, disabled, \"order\", systems, url from rdioscannerdownstreams"
 	}
 	if rows, err = db.Sql.Query(q); err != nil {
 		return formatError(err)
@@ -478,9 +478,9 @@ func (downstreams *Downstreams) Write(db *Database) error {
 		return fmt.Errorf("downstreams.write: %v", err)
 	}
 
-	q := "select `_id` from `rdioScannerDownstreams`"
+	q := "select `_id` from `rdioscannerdownstreams`"
 	if db.Config.DbType == DbTypePostgresql {
-		q = "select _id from rdioScannerDownstreams"
+		q = "select _id from rdioscannerdownstreams"
 	}
 	if rows, err = db.Sql.Query(q); err != nil {
 		return formatError(err)
@@ -514,9 +514,9 @@ func (downstreams *Downstreams) Write(db *Database) error {
 			s := string(b)
 			s = strings.ReplaceAll(s, "[", "(")
 			s = strings.ReplaceAll(s, "]", ")")
-			q := fmt.Sprintf("delete from `rdioScannerDownstreams` where `_id` in %v", s)
+			q := fmt.Sprintf("delete from `rdioscannerdownstreams` where `_id` in %v", s)
 			if db.Config.DbType == DbTypePostgresql {
-				q = fmt.Sprintf("delete from rdioScannerDownstreams where _id in %v", s)
+				q = fmt.Sprintf("delete from rdioscannerdownstreams where _id in %v", s)
 			}
 			if _, err = db.Sql.Exec(q); err != nil {
 				return formatError(err)
@@ -532,9 +532,9 @@ func (downstreams *Downstreams) Write(db *Database) error {
 			systems = downstream.Systems
 		}
 
-		q := "select count(*) from `rdioScannerDownstreams` where `_id` = ?"
+		q := "select count(*) from `rdioscannerdownstreams` where `_id` = ?"
 		if db.Config.DbType == DbTypePostgresql {
-			q = "select count(*) from rdioScannerDownstreams where _id = $1"
+			q = "select count(*) from rdioscannerdownstreams where _id = $1"
 		}
 		if err = db.Sql.QueryRow(q, downstream.Id).Scan(&count); err != nil {
 			break
@@ -542,21 +542,21 @@ func (downstreams *Downstreams) Write(db *Database) error {
 
 		if count == 0 {
 			if db.Config.DbType == DbTypePostgresql {
-				q = "insert into rdioScannerDownstreams (apiKey, disabled, \"order\", systems, url) values ($1, $2, $3, $4, $5)"
+				q = "insert into rdioscannerdownstreams (apiKey, disabled, \"order\", systems, url) values ($1, $2, $3, $4, $5)"
 				if _, err = db.Sql.Exec(q, downstream.Apikey, downstream.Disabled, downstream.Order, systems, downstream.Url); err != nil {
 					break
 				}
 			} else {
-				q = "insert into `rdioScannerDownstreams` (`_id`, `apiKey`, `disabled`, `order`, `systems`, `url`) values (?, ?, ?, ?, ?, ?)"
+				q = "insert into `rdioscannerdownstreams` (`_id`, `apiKey`, `disabled`, `order`, `systems`, `url`) values (?, ?, ?, ?, ?, ?)"
 				if _, err = db.Sql.Exec(q, downstream.Id, downstream.Apikey, downstream.Disabled, downstream.Order, systems, downstream.Url); err != nil {
 					break
 				}
 			}
 
 		} else {
-			q := "update `rdioScannerDownstreams` set `_id` = ?, `apiKey` = ?, `disabled` = ?, `order` = ?, `systems` = ?, `url` = ? where `_id` = ?"
+			q := "update `rdioscannerdownstreams` set `_id` = ?, `apiKey` = ?, `disabled` = ?, `order` = ?, `systems` = ?, `url` = ? where `_id` = ?"
 			if db.Config.DbType == DbTypePostgresql {
-				q = "update rdioScannerDownstreams set _id = $1, apiKey = $2, disabled = $3, \"order\" = $4, systems = $5, url = $6 where _id = $7"
+				q = "update rdioscannerdownstreams set _id = $1, apiKey = $2, disabled = $3, \"order\" = $4, systems = $5, url = $6 where _id = $7"
 			}
 			if _, err = db.Sql.Exec(q, downstream.Id, downstream.Apikey, downstream.Disabled, downstream.Order, systems, downstream.Url, downstream.Id); err != nil {
 				break

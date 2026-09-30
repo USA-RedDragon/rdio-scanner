@@ -162,9 +162,9 @@ func (talkgroups *Talkgroups) Read(db *Database, systemId uint) error {
 		return fmt.Errorf("talkgroups.read: %v", err)
 	}
 
-	q := "select `frequency`, `groupId`, `id`, `label`, `led`, `name`, `order`, `tagId` from `rdioScannerTalkgroups` where `systemId` = ?"
+	q := "select `frequency`, `groupId`, `id`, `label`, `led`, `name`, `order`, `tagId` from `rdioscannertalkgroups` where `systemId` = ?"
 	if db.Config.DbType == DbTypePostgresql {
-		q = "select frequency, groupId, id, label, led, name, \"order\", tagId from rdioScannerTalkgroups where systemId = $1"
+		q = "select frequency, groupId, id, label, led, name, \"order\", tagId from rdioscannertalkgroups where systemId = $1"
 	}
 	if rows, err = db.Sql.Query(q, systemId); err != nil {
 		return formatError(err)
@@ -216,9 +216,9 @@ func (talkgroups *Talkgroups) Write(db *Database, systemId uint) error {
 		return fmt.Errorf("talkgroups.write: %v", err)
 	}
 
-	q := "select `id` from `rdioScannerTalkgroups` where `systemId` = ?"
+	q := "select `id` from `rdioscannertalkgroups` where `systemId` = ?"
 	if db.Config.DbType == DbTypePostgresql {
-		q = "select id from rdioScannerTalkgroups where systemId = $1"
+		q = "select id from rdioscannertalkgroups where systemId = $1"
 	}
 	if rows, err = db.Sql.Query(q, systemId); err != nil {
 		return formatError(err)
@@ -252,9 +252,9 @@ func (talkgroups *Talkgroups) Write(db *Database, systemId uint) error {
 			s := string(b)
 			s = strings.ReplaceAll(s, "[", "(")
 			s = strings.ReplaceAll(s, "]", ")")
-			q := fmt.Sprintf("delete from `rdioScannerTalkgroups` where `id` in %v and `systemId` = %v", s, systemId)
+			q := fmt.Sprintf("delete from `rdioscannertalkgroups` where `id` in %v and `systemId` = %v", s, systemId)
 			if db.Config.DbType == DbTypePostgresql {
-				q = fmt.Sprintf("delete from rdioScannerTalkgroups where id in %v and systemId = %v", s, systemId)
+				q = fmt.Sprintf("delete from rdioscannertalkgroups where id in %v and systemId = %v", s, systemId)
 			}
 			if _, err = db.Sql.Exec(q); err != nil {
 				return formatError(err)
@@ -263,27 +263,27 @@ func (talkgroups *Talkgroups) Write(db *Database, systemId uint) error {
 	}
 
 	for _, talkgroup := range talkgroups.List {
-		q := "select count(*) from `rdioScannerTalkgroups` where `id` = ? and `systemId` = ?"
+		q := "select count(*) from `rdioscannertalkgroups` where `id` = ? and `systemId` = ?"
 		if db.Config.DbType == DbTypePostgresql {
-			q = "select count(*) from rdioScannerTalkgroups where id = $1 and systemId = $2"
+			q = "select count(*) from rdioscannertalkgroups where id = $1 and systemId = $2"
 		}
 		if err = db.Sql.QueryRow(q, talkgroup.Id, systemId).Scan(&count); err != nil {
 			break
 		}
 
 		if count == 0 {
-			q = "insert into `rdioScannerTalkgroups` (`frequency`, `groupId`, `id`, `label`, `led`, `name`, `order`, `systemId`, `tagId`) values (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+			q = "insert into `rdioscannertalkgroups` (`frequency`, `groupId`, `id`, `label`, `led`, `name`, `order`, `systemId`, `tagId`) values (?, ?, ?, ?, ?, ?, ?, ?, ?)"
 			if db.Config.DbType == DbTypePostgresql {
-				q = "insert into rdioScannerTalkgroups (frequency, groupId, id, label, led, name, \"order\", systemId, tagId) values ($1, $2, $3, $4, $5, $6, $7, $8, $9)"
+				q = "insert into rdioscannertalkgroups (frequency, groupId, id, label, led, name, \"order\", systemId, tagId) values ($1, $2, $3, $4, $5, $6, $7, $8, $9)"
 			}
 			if _, err = db.Sql.Exec(q, talkgroup.Frequency, talkgroup.GroupId, talkgroup.Id, talkgroup.Label, talkgroup.Led, talkgroup.Name, talkgroup.Order, systemId, talkgroup.TagId); err != nil {
 				break
 			}
 
 		} else {
-			q = "update `rdioScannerTalkgroups` set `frequency` = ?, `groupId` = ?, `label` = ?, `led` = ?, `name` = ?, `order` = ?, `tagId` = ? where `id` = ? and `systemId` = ?"
+			q = "update `rdioscannertalkgroups` set `frequency` = ?, `groupId` = ?, `label` = ?, `led` = ?, `name` = ?, `order` = ?, `tagId` = ? where `id` = ? and `systemId` = ?"
 			if db.Config.DbType == DbTypePostgresql {
-				q = "update rdioScannerTalkgroups set frequency = $1, groupId = $2, label = $3, led = $4, name = $5, \"order\" = $6, tagId = $7 where id = $8 and systemId = $9"
+				q = "update rdioscannertalkgroups set frequency = $1, groupId = $2, label = $3, led = $4, name = $5, \"order\" = $6, tagId = $7 where id = $8 and systemId = $9"
 			}
 			if _, err = db.Sql.Exec(q, talkgroup.Frequency, talkgroup.GroupId, talkgroup.Label, talkgroup.Led, talkgroup.Name, talkgroup.Order, talkgroup.TagId, talkgroup.Id, systemId); err != nil {
 				break

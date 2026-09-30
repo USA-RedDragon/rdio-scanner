@@ -74,9 +74,9 @@ func (logs *Logs) LogEvent(level string, message string) error {
 			Message:  message,
 		}
 
-		q := "insert into `rdioScannerLogs` (`dateTime`, `level`, `message`) values (?, ?, ?)"
+		q := "insert into `rdioscannerlogs` (`dateTime`, `level`, `message`) values (?, ?, ?)"
 		if logs.database.Config.DbType == DbTypePostgresql {
-			q = "insert into rdioScannerLogs (dateTime, level, message) values ($1, $2, $3)"
+			q = "insert into rdioscannerlogs (dateTime, level, message) values ($1, $2, $3)"
 		}
 		if _, err := logs.database.Sql.Exec(q, l.DateTime, l.Level, l.Message); err != nil {
 			return fmt.Errorf("logs.logevent: %v", err)
@@ -91,9 +91,9 @@ func (logs *Logs) Prune(db *Database, pruneDays uint) error {
 	defer logs.mutex.Unlock()
 
 	date := time.Now().Add(-24 * time.Hour * time.Duration(pruneDays)).Format(db.DateTimeFormat)
-	q := "delete from `rdioScannerLogs` where `dateTime` < ?"
+	q := "delete from `rdioscannerlogs` where `dateTime` < ?"
 	if db.Config.DbType == DbTypePostgresql {
-		q = "delete from rdioScannerLogs where dateTime < $1"
+		q = "delete from rdioscannerlogs where dateTime < $1"
 	}
 	_, err := db.Sql.Exec(q, date)
 
@@ -186,9 +186,9 @@ func (logs *Logs) Search(searchOptions *LogsSearchOptions, db *Database) (*LogsS
 		offset = v
 	}
 
-	query = fmt.Sprintf("select `dateTime` from `rdioScannerLogs` where %v order by `dateTime` asc", where)
+	query = fmt.Sprintf("select `dateTime` from `rdioscannerlogs` where %v order by `dateTime` asc", where)
 	if db.Config.DbType == DbTypePostgresql {
-		query = fmt.Sprintf("select dateTime from rdioScannerLogs where %v order by dateTime asc", where)
+		query = fmt.Sprintf("select dateTime from rdioscannerlogs where %v order by dateTime asc", where)
 	}
 	if err = db.Sql.QueryRow(query).Scan(&dateTime); err != nil && err != sql.ErrNoRows {
 		return nil, formatError(fmt.Errorf("%v, %v", err, query))
@@ -198,9 +198,9 @@ func (logs *Logs) Search(searchOptions *LogsSearchOptions, db *Database) (*LogsS
 		logResults.DateStart = t
 	}
 
-	query = fmt.Sprintf("select `dateTime` from `rdioScannerLogs` where %v order by `dateTime` asc", where)
+	query = fmt.Sprintf("select `dateTime` from `rdioscannerlogs` where %v order by `dateTime` asc", where)
 	if db.Config.DbType == DbTypePostgresql {
-		query = fmt.Sprintf("select dateTime from rdioScannerLogs where %v order by dateTime asc", where)
+		query = fmt.Sprintf("select dateTime from rdioscannerlogs where %v order by dateTime asc", where)
 	}
 	if err = db.Sql.QueryRow(query).Scan(&dateTime); err != nil && err != sql.ErrNoRows {
 		return nil, formatError(fmt.Errorf("%v, %v", err, query))
@@ -210,17 +210,17 @@ func (logs *Logs) Search(searchOptions *LogsSearchOptions, db *Database) (*LogsS
 		logResults.DateStop = t
 	}
 
-	query = fmt.Sprintf("select count(*) from `rdioScannerLogs` where %v", where)
+	query = fmt.Sprintf("select count(*) from `rdioscannerlogs` where %v", where)
 	if db.Config.DbType == DbTypePostgresql {
-		query = fmt.Sprintf("select count(*) from rdioScannerLogs where %v", where)
+		query = fmt.Sprintf("select count(*) from rdioscannerlogs where %v", where)
 	}
 	if err = db.Sql.QueryRow(query).Scan(&logResults.Count); err != nil && err != sql.ErrNoRows {
 		return nil, formatError(fmt.Errorf("%v, %v", err, query))
 	}
 
-	query = fmt.Sprintf("select `_id`, `DateTime`, `level`, `message` from `rdioScannerLogs` where %v order by `dateTime` %v limit %v offset %v", where, order, limit, offset)
+	query = fmt.Sprintf("select `_id`, `DateTime`, `level`, `message` from `rdioscannerlogs` where %v order by `dateTime` %v limit %v offset %v", where, order, limit, offset)
 	if db.Config.DbType == DbTypePostgresql {
-		query = fmt.Sprintf("select _id, dateTime, level, message from rdioScannerLogs where %v order by dateTime %v limit %v offset %v", where, order, limit, offset)
+		query = fmt.Sprintf("select _id, dateTime, level, message from rdioscannerlogs where %v order by dateTime %v limit %v offset %v", where, order, limit, offset)
 	}
 	if rows, err = db.Sql.Query(query); err != nil && err != sql.ErrNoRows {
 		return nil, formatError(fmt.Errorf("%v, %v", err, query))

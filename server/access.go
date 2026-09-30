@@ -225,9 +225,9 @@ func (accesses *Accesses) Read(db *Database) error {
 		return fmt.Errorf("accesses.read: %v", err)
 	}
 
-	query := "select `_id`, `code`, `expiration`, `ident`, `limit`, `order`, `systems` from `rdioScannerAccesses`"
+	query := "select `_id`, `code`, `expiration`, `ident`, `limit`, `order`, `systems` from `rdioscanneraccesses`"
 	if db.Config.DbType == DbTypePostgresql {
-		query = "select _id, code, expiration, ident, \"limit\", \"order\", systems from rdioScannerAccesses"
+		query = "select _id, code, expiration, ident, \"limit\", \"order\", systems from rdioscanneraccesses"
 	}
 	if rows, err = db.Sql.Query(query); err != nil {
 		return formatError(err)
@@ -312,9 +312,9 @@ func (accesses *Accesses) Write(db *Database) error {
 		return fmt.Errorf("accesses.write: %v", err)
 	}
 
-	query := "select `_id` from `rdioScannerAccesses`"
+	query := "select `_id` from `rdioscanneraccesses`"
 	if db.Config.DbType == DbTypePostgresql {
-		query = "select _id from rdioScannerAccesses"
+		query = "select _id from rdioscanneraccesses"
 	}
 	if rows, err = db.Sql.Query(query); err != nil {
 		return formatError(err)
@@ -348,9 +348,9 @@ func (accesses *Accesses) Write(db *Database) error {
 			s := string(b)
 			s = strings.ReplaceAll(s, "[", "(")
 			s = strings.ReplaceAll(s, "]", ")")
-			q := fmt.Sprintf("delete from `rdioScannerAccesses` where `_id` in %v", s)
+			q := fmt.Sprintf("delete from `rdioscanneraccesses` where `_id` in %v", s)
 			if db.Config.DbType == DbTypePostgresql {
-				q = fmt.Sprintf("delete from rdioScannerAccesses where _id in %v", s)
+				q = fmt.Sprintf("delete from rdioscanneraccesses where _id in %v", s)
 			}
 			if _, err = db.Sql.Exec(q); err != nil {
 				return formatError(err)
@@ -366,9 +366,9 @@ func (accesses *Accesses) Write(db *Database) error {
 			systems = access.Systems
 		}
 
-		q := "select count(*) from `rdioScannerAccesses` where `_id` = ?"
+		q := "select count(*) from `rdioscanneraccesses` where `_id` = ?"
 		if db.Config.DbType == DbTypePostgresql {
-			q = "select count(*) from rdioScannerAccesses where _id = $1"
+			q = "select count(*) from rdioscanneraccesses where _id = $1"
 		}
 		if err = db.Sql.QueryRow(q, access.Id).Scan(&count); err != nil {
 			break
@@ -376,20 +376,20 @@ func (accesses *Accesses) Write(db *Database) error {
 
 		if count == 0 {
 			if db.Config.DbType == DbTypePostgresql {
-				q = "insert into rdioScannerAccesses (code, expiration, ident, \"limit\", \"order\", systems) values ($1, $2, $3, $4, $5, $6)"
+				q = "insert into rdioscanneraccesses (code, expiration, ident, \"limit\", \"order\", systems) values ($1, $2, $3, $4, $5, $6)"
 				if _, err = db.Sql.Exec(q, access.Code, access.Expiration, access.Ident, access.Limit, access.Order, systems); err != nil {
 					break
 				}
 			} else {
-				q = "insert into `rdioScannerAccesses` (`_id`, `code`, `expiration`, `ident`, `limit`, `order`, `systems`) values (?, ?, ?, ?, ?, ?, ?)"
+				q = "insert into `rdioscanneraccesses` (`_id`, `code`, `expiration`, `ident`, `limit`, `order`, `systems`) values (?, ?, ?, ?, ?, ?, ?)"
 				if _, err = db.Sql.Exec(q, access.Id, access.Code, access.Expiration, access.Ident, access.Limit, access.Order, systems); err != nil {
 					break
 				}
 			}
 		} else {
-			q := "update `rdioScannerAccesses` set `_id` = ?, `code` = ?, `expiration` = ?, `ident` = ?, `limit` = ?, `order` = ?, `systems` = ? where `_id` = ?"
+			q := "update `rdioscanneraccesses` set `_id` = ?, `code` = ?, `expiration` = ?, `ident` = ?, `limit` = ?, `order` = ?, `systems` = ? where `_id` = ?"
 			if db.Config.DbType == DbTypePostgresql {
-				q = "update rdioScannerAccesses set _id = $1, code = $2, expiration = $3, ident = $4, \"limit\" = $5, \"order\" = $6, systems = $7 where _id = $8"
+				q = "update rdioscanneraccesses set _id = $1, code = $2, expiration = $3, ident = $4, \"limit\" = $5, \"order\" = $6, systems = $7 where _id = $8"
 			}
 			if _, err = db.Sql.Exec(q, access.Id, access.Code, access.Expiration, access.Ident, access.Limit, access.Order, systems, access.Id); err != nil {
 				break
