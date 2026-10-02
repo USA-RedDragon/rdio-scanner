@@ -11,7 +11,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/kardianos/service v1.2.2
-	github.com/lib/pq v1.10.9
+	github.com/lib/pq v1.12.3
 	github.com/prometheus/client_golang v1.20.5
 	github.com/testcontainers/testcontainers-go v0.44.0
 	github.com/testcontainers/testcontainers-go/modules/mariadb v0.44.0
